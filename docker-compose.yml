@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  # =====================================================
+  # BASE DE DONNÉES POSTGRESQL
+  # =====================================================
+  db:
+    image: postgres:15
+    container_name: footix_db
+    restart: always
+    environment:
+      POSTGRES_USER: user_footix
+      POSTGRES_PASSWORD: password_footix
+      POSTGRES_DB: footix_score
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - footix_network
+
+  # =====================================================
+  # BACKEND API NODE.JS
+  # =====================================================
+  api:
+    build: ./Backend
+    container_name: footix_api
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgres://user_footix:password_footix@db:5432/footix_score
+      NODE_ENV: development
+    depends_on:
+      - db
+    networks:
+      - footix_network
+
+  # =====================================================
+  # PGADMIN - INTERFACE GRAPHIQUE POSTGRESQL
+  # =====================================================
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: footix_pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@footix.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - db
+    networks:
+      - footix_network
+
+# =====================================================
+# VOLUMES PERSISTANTS
+# =====================================================
+volumes:
+  postgres_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+# =====================================================
+# RÉSEAU INTERNE
+# =====================================================
+networks:
+  footix_network:
+    driver: bridge

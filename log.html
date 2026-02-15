@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion / Inscription</title>
+    <link rel="stylesheet" href="stylelog.css">
+</head>
+<body>
+    <div class="container">
+        <div class="form-container">
+            <!-- Formulaire de connexion -->
+            <div id="loginForm">
+                <h2>Connexion</h2>
+                <div class="success-message" id="loginSuccess"></div>
+                
+                <div class="input-group">
+                    <label for="loginEmail">Email</label>
+                    <input type="email" id="loginEmail" placeholder="votre@email.com">
+                    <span class="error" id="loginEmailError"></span>
+                </div>
+
+                <div class="input-group">
+                    <label for="loginPassword">Mot de passe</label>
+                    <input type="password" id="loginPassword" placeholder="••••••••">
+                    <span class="error" id="loginPasswordError"></span>
+                </div>
+
+                <button onclick="login()">Se connecter</button>
+
+                <div class="switch-form">
+                    Pas encore de compte ? <a onclick="showRegister()">S'inscrire</a>
+                </div>
+            </div>
+
+            <!-- Formulaire d'inscription -->
+            <div id="registerForm" class="hidden">
+                <h2>Inscription</h2>
+                <div class="success-message" id="registerSuccess"></div>
+
+                <div class="input-group">
+                    <label for="registerName">Nom complet</label>
+                    <input type="text" id="registerName" placeholder="Jean Dupont">
+                    <span class="error" id="registerNameError"></span>
+                </div>
+
+                <div class="input-group">
+                    <label for="registerEmail">Email</label>
+                    <input type="email" id="registerEmail" placeholder="votre@email.com">
+                    <span class="error" id="registerEmailError"></span>
+                </div>
+
+                <div class="input-group">
+                    <label for="registerPassword">Mot de passe</label>
+                    <input type="password" id="registerPassword" placeholder="••••••••">
+                    <span class="error" id="registerPasswordError"></span>
+                </div>
+
+                <div class="input-group">
+                    <label for="registerConfirmPassword">Confirmer le mot de passe</label>
+                    <input type="password" id="registerConfirmPassword" placeholder="••••••••">
+                    <span class="error" id="registerConfirmPasswordError"></span>
+                </div>
+
+                <button onclick="register()">S'inscrire</button>
+
+                <div class="switch-form">
+                    Déjà un compte ? <a onclick="showLogin()">Se connecter</a>
+                </div>
+            </div>
+
+            <!-- Dashboard après connexion -->
+            <div id="dashboard" class="hidden dashboard">
+                <h2>Bienvenue !</h2>
+                <p>Vous êtes connecté en tant que <strong id="userName"></strong></p>
+                <button class="logout-btn" onclick="logout()">Se déconnecter</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Stockage des utilisateurs (simulé avec des variables)
+        let users = {};
+
+        // Utilisateur actuellement connecté
+        let currentUser = null;
+
+        // Fonction pour afficher le formulaire d'inscription
+        function showRegister() {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('registerForm').classList.remove('hidden');
+            clearErrors();
+        }
+
+        // Fonction pour afficher le formulaire de connexion
+        function showLogin() {
+            document.getElementById('registerForm').classList.add('hidden');
+            document.getElementById('loginForm').classList.remove('hidden');
+            clearErrors();
+        }
+
+        // Fonction pour effacer les erreurs
+        function clearErrors() {
+            const errors = document.querySelectorAll('.error');
+            errors.forEach(error => {
+                error.classList.remove('show');
+                error.textContent = '';
+            });
+        }
+
+        // Fonction d'inscription
+        function register() {
+            clearErrors();
+
+            const name = document.getElementById('registerName').value.trim();
+            const email = document.getElementById('registerEmail').value.trim();
+            const password = document.getElementById('registerPassword').value;
+            const confirmPassword = document.getElementById('registerConfirmPassword').value;
+
+            let isValid = true;
+
+            // Validation du nom
+            if (name === '') {
+                showError('registerNameError', 'Le nom est requis');
+                isValid = false;
+            }
+
+            // Validation de l'email
+            if (email === '') {
+                showError('registerEmailError', 'L\'email est requis');
+                isValid = false;
+            } else if (!isValidEmail(email)) {
+                showError('registerEmailError', 'Email invalide');
+                isValid = false;
+            } else if (users[email]) {
+                showError('registerEmailError', 'Cet email est déjà utilisé');
+                isValid = false;
+            }
+
+            // Validation du mot de passe
+            if (password === '') {
+                showError('registerPasswordError', 'Le mot de passe est requis');
+                isValid = false;
+            } else if (password.length < 6) {
+                showError('registerPasswordError', 'Le mot de passe doit contenir au moins 6 caractères');
+                isValid = false;
+            }
+
+            // Validation de la confirmation
+            if (confirmPassword === '') {
+                showError('registerConfirmPasswordError', 'Confirmez votre mot de passe');
+                isValid = false;
+            } else if (password !== confirmPassword) {
+                showError('registerConfirmPasswordError', 'Les mots de passe ne correspondent pas');
+                isValid = false;
+            }
+
+            if (isValid) {
+                // Enregistrer l'utilisateur
+                users[email] = {
+                    name: name,
+                    email: email,
+                    password: password
+                };
+
+                // Afficher un message de succès
+                const successMsg = document.getElementById('registerSuccess');
+                successMsg.textContent = 'Inscription réussie ! Vous pouvez maintenant vous connecter.';
+                successMsg.classList.add('show');
+
+                // Réinitialiser le formulaire
+                document.getElementById('registerName').value = '';
+                document.getElementById('registerEmail').value = '';
+                document.getElementById('registerPassword').value = '';
+                document.getElementById('registerConfirmPassword').value = '';
+
+                // Rediriger vers la connexion après 2 secondes
+                setTimeout(() => {
+                    successMsg.classList.remove('show');
+                    showLogin();
+                }, 2000);
+            }
+        }
+
+        // Fonction de connexion
+        function login() {
+            clearErrors();
+
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+
+            let isValid = true;
+
+            // Validation de l'email
+            if (email === '') {
+                showError('loginEmailError', 'L\'email est requis');
+                isValid = false;
+            }
+
+            // Validation du mot de passe
+            if (password === '') {
+                showError('loginPasswordError', 'Le mot de passe est requis');
+                isValid = false;
+            }
+
+            if (isValid) {
+                // Vérifier les identifiants
+                const user = users[email];
+
+                if (!user) {
+                    showError('loginEmailError', 'Aucun compte trouvé avec cet email');
+                } else if (user.password !== password) {
+                    showError('loginPasswordError', 'Mot de passe incorrect');
+                } else {
+                    // Connexion réussie
+                    currentUser = user;
+                    showDashboard();
+                }
+            }
+        }
+
+        // Afficher le dashboard
+        function showDashboard() {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            document.getElementById('userName').textContent = currentUser.name;
+        }
+
+        // Déconnexion
+        function logout() {
+            currentUser = null;
+            document.getElementById('dashboard').classList.add('hidden');
+            document.getElementById('loginForm').classList.remove('hidden');
+            document.getElementById('loginEmail').value = '';
+            document.getElementById('loginPassword').value = '';
+        }
+
+        // Fonction pour afficher une erreur
+        function showError(elementId, message) {
+            const errorElement = document.getElementById(elementId);
+            errorElement.textContent = message;
+            errorElement.classList.add('show');
+        }
+
+        // Validation de l'email
+        function isValidEmail(email) {
+            const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return regex.test(email);
+        }
+    </script>
+</body>
+</html>
