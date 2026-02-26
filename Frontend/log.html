@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion / Inscription - Projet CDA</title>
+    <link rel="stylesheet" href="./stylelog.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="./auth.js"></script>
+</head>
+<body>
+
+    <div class="container">
+        <div class="card-header">
+            <h2 id="formTitle">Connexion</h2>
+        </div>
+
+        <div class="form-container">
+            <div id="loginForm">
+                <div class="success-message" id="loginSuccess"></div>
+                <div class="input-group">
+                    <label>Email</label>
+                    <input type="email" id="loginEmail" placeholder="votre@email.com">
+                    <span class="error" id="loginEmailError"></span>
+                </div>
+                <div class="input-group">
+                    <label>Mot de passe</label>
+                    <input type="password" id="loginPassword" placeholder="••••••••">
+                    <span class="error" id="loginPasswordError"></span>
+                </div>
+                <button onclick="login()">Se connecter</button>
+                <div class="switch-form">
+                    Pas encore de compte ? <a onclick="showRegister()">S'inscrire</a>
+                </div>
+            </div>
+
+            <div id="registerForm" class="hidden">
+                <div class="success-message" id="registerSuccess"></div>
+                <div class="input-group">
+                    <label>Nom complet</label>
+                    <input type="text" id="registerName" placeholder="Jean Dupont">
+                    <span class="error" id="registerNameError"></span>
+                </div>
+                <div class="input-group">
+                    <label>Email</label>
+                    <input type="email" id="registerEmail" placeholder="votre@email.com">
+                    <span class="error" id="registerEmailError"></span>
+                </div>
+                <div class="input-group">
+                    <label>Mot de passe</label>
+                    <input type="password" id="registerPassword" placeholder="••••••••">
+                    <span class="error" id="registerPasswordError"></span>
+                </div>
+                <div class="input-group">
+                    <label>Confirmer le mot de passe</label>
+                    <input type="password" id="registerConfirmPassword" placeholder="••••••••">
+                    <span class="error" id="registerConfirmPasswordError"></span>
+                </div>
+                <button onclick="register()">S'inscrire</button>
+                <div class="switch-form">
+                    Déjà un compte ? <a onclick="showLogin()">Se connecter</a>
+                </div>
+            </div>
+
+            <div id="dashboard" class="hidden text-center">
+                <div class="py-4">
+                    <p class="text-gray-600 mb-4">Vous êtes connecté en tant que :</p>
+                    <h3 class="text-2xl font-bold text-indigo-600 mb-6" id="userName"></h3>
+                    <button class="logout-btn" onclick="logout()">Se déconnecter</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+</body>
+</html>

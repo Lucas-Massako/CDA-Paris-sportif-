@@ -1,11 +1,13 @@
 const express = require('express');
 const { Pool } = require('pg');
 const cors = require('cors');
+const authRoutes = require('./routes/authRoutes');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
-
+// 2. On dit à Express d'utiliser ces routes avec le préfixe /api/auth
+app.use('/api/auth', authRoutes);
 // Connexion à PostgreSQL via l'URL définie dans le docker-compose
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,

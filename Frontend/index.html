@@ -1,84 +1,58 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PROJET CDA </title>
-    <!-- React and Babel for in-browser JSX testing & tailwind -->
-    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-     <script src="https://cdn.tailwindcss.com"></script>
+    <title>PROJET CDA - Accueil</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Petit ajout pour le fond en dégradé animé ou fixe */
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+    </style>
 </head>
-<body>
-    <h1>Bienvenue sur notre projet CDA</h1>
-    <h2>Projet de Conception et Développement d'Applications</h2>
-    <p>Ce projet a été réalisé dans le cadre du cours de Conception et Développement d'Applications. Il vise à créer une application web fonctionnelle avec des fonctionnalités de base telles que l'inscription, la connexion et la gestion de compte.</p>
-    <p>Vous pouvez vous inscrire ou vous connecter pour accéder à votre compte et découvrir les prochains matchs </p>
-    <br>
-    <button onclick="window.location.href='log.html'">Se connecter</button>
-    <br>
+<body class="flex items-center justify-center p-6">
 
-  <button class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded hover:scale-105 bg-gradient-to-r from-green-400 to-green-600 transition-transform duration-300">
-    Mon joli bouton
-  </button>
+    <div class="max-w-2xl w-full bg-white rounded-3xl shadow-2xl overflow-hidden">
+        <div class="bg-gradient-to-r from-indigo-600 to-purple-600 p-8 text-white text-center">
+            <h1 class="text-3xl font-bold mb-2">Projet CDA</h1>
+            <p class="text-indigo-100 italic">Conception et Développement d'Applications</p>
+        </div>
 
+        <div class="p-8 md:p-12 text-center">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Bienvenue sur notre plateforme</h2>
+            
+            <p class="text-gray-600 leading-relaxed mb-6">
+                Ce projet vise à créer une application web fonctionnelle avec des fonctionnalités de base telles que 
+                <span class="font-medium text-indigo-600">l'inscription</span>, 
+                <span class="font-medium text-indigo-600">la connexion</span> et la 
+                <span class="font-medium text-indigo-600">gestion de compte</span>.
+            </p>
 
-    <!-- root for React test component -->
-    <div id="root"></div>
+            <div class="bg-blue-50 border-l-4 border-indigo-500 p-4 mb-8 text-left">
+                <p class="text-sm text-indigo-800">
+                    💡 Connectez-vous pour accéder à votre tableau de bord et découvrir les prochains matchs en exclusivité.
+                </p>
+            </div>
 
-    <!-- StepperDemo component loaded inline for testing -->
-    <script type="text/babel">
-      function StepperDemo() {
-        const steps = ["Step A", "Step B", "Step C"];
-        return(
-          <div className="flex ">
-            {steps.map((step , idx)=>  {
-              const stepnumber = idx + 1;
-              
-              return(
-                <div className="
-                  w-[200px]
-                  relative
-                  flex flex-col justify-center items-center
-                  [&:not(:first-child)]:before:h-[3px] [&:not(:first-child)]:before:w-full
-                  [&:not(:first-child)]:before:absolute
-                  [&:not(:first-child)]:before:right-1/2 [&:not(:first-child)]:before:top-1/3
-                  [&:not(:first-child)]:before:translate-y-1
-                  [&:not(:first-child)]:before:bg-primary" 
-                  key={idx}>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <button onclick="window.location.href='./log.html'" 
+                    class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg transform transition hover:-translate-y-1 active:scale-95 duration-200">
+                    Se connecter
+                </button>
 
-                  <div className="
-                    flex items-center
-                    rounded-full
-                     z-10 
-                     w-10 h-10
-                     font-semibold
-                     bg-primary text-primary-foreground">
+                <button class="bg-white border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-50 font-bold py-3 px-8 rounded-xl transition duration-200">
+                    En savoir plus
+                </button>
+            </div>
+        </div>
 
-                    {stepnumber}
-                  </div>  
-                  <div className="
-                    text-sa
-                    mt-2
-                    font-medium
-                    text-foreground">
-                    {step}
-                  </div>
-                </div>
-              );
-            })}     
-          </div>
-        );    
-      }
+        <div class="bg-gray-50 py-4 text-center border-t border-gray-100">
+            <p class="text-xs text-gray-400 uppercase tracking-widest">Réalisé par l'équipe CDA - 2026</p>
+        </div>
+    </div>
 
-      // render the tester component into the root div
-      const root = ReactDOM.createRoot(document.getElementById('root'));
-      root.render(<StepperDemo />);
-    </script>
 </body>
 </html>
-<!DOCTYPE html>
-<html>
-<head>
- 
