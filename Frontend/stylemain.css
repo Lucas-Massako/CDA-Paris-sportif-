@@ -1,0 +1,28 @@
+
+:root {
+    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    --error-color: #e74c3c;
+    --success-color: #2ecc71;
+    --text-main: #333;
+    --text-muted: #666;
+    --border-color: #e0e0e0;
+}
+        
+ nav{
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg-gradient);
+   min-height: 10%;
+    display: flex;
+    align-items: center; /* Centrage vertical corrigé */
+    
+ 
+    padding: 20px;}
+
+        nav { color: #2e43cc;}
+        nav ul { display: flex; gap: 2rem; }
+        nav a { font-weight: 500; }
+        nav a:hover { color:pink; }
+       
+
+ 
