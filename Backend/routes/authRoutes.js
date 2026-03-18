@@ -1,41 +1,51 @@
 const express = require('express');
 const router = express.Router();
-const { Pool } = require('pg');
+const bcrypt = require('bcrypt');
+const pool = require('../db'); // On va chercher le pool dans le fichier central
 
-// On crée la connexion (elle utilise l'URL définie dans ton docker-compose)
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
-
-// Cette route correspond à : POST http://localhost:8000/api/auth/register
+// --- ROUTE INSCRIPTION ---
 router.post('/register', async (req, res) => {
-    // On récupère les données envoyées par le Frontend
     const { name, email, password } = req.body;
-
     try {
-        console.log("Tentative d'enregistrement en BDD pour :", email);
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-        // LA REQUÊTE SQL : 
-        // /!\ Attention : vérifie bien que tes colonnes s'appellent nom, email et mot_de_passe dans ta table utilisateur
-        const query = 'INSERT INTO utilisateur (nom, email, mot_de_passe) VALUES ($1, $2, $3) RETURNING *';
-        const values = [name, email, password];
-
-        const result = await pool.query(query, values);
-
-        // Si ça réussit, on renvoie l'utilisateur créé
+        const query = 'INSERT INTO utilisateur (nom, email, mot_de_passe) VALUES ($1, $2, $3) RETURNING id, nom, email';
+        const result = await pool.query(query, [name, email, hashedPassword]);
+        
         res.status(201).json({ 
-            message: "Utilisateur enregistré avec succès !",
+            message: "Utilisateur créé avec succès !", 
             user: result.rows[0] 
         });
-
     } catch (err) {
-        console.error("Erreur SQL détaillée :", err.message);
+        console.error("Erreur Inscription:", err.message);
+        res.status(500).json({ message: "Erreur : Cet email est peut-être déjà utilisé." });
+    }
+});
+
+// --- ROUTE CONNEXION ---
+router.post('/login', async (req, res) => {
+    const { email, password } = req.body;
+    try {
+        const result = await pool.query('SELECT * FROM utilisateur WHERE email = $1', [email]);
         
-        // Gestion d'erreur (ex: email déjà utilisé)
-        res.status(500).json({ 
-            error: "Erreur lors de l'inscription en base de données",
-            details: err.message 
+        if (result.rows.length === 0) {
+            return res.status(401).json({ message: "Identifiants incorrects" });
+        }
+
+        const user = result.rows[0];
+        const isMatch = await bcrypt.compare(password, user.mot_de_passe);
+
+        if (!isMatch) {
+            return res.status(401).json({ message: "Identifiants incorrects" });
+        }
+
+        res.json({ 
+            message: "Connexion réussie !", 
+            user: { name: user.nom, email: user.email } 
         });
+    } catch (err) {
+        res.status(500).json({ message: "Erreur serveur lors de la connexion." });
     }
 });
 

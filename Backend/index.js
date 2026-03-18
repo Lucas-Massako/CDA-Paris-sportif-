@@ -1,21 +1,18 @@
 const express = require('express');
-const { Pool } = require('pg');
 const cors = require('cors');
 const authRoutes = require('./routes/authRoutes');
+const pool = require('./db'); // On importe le pool UNIQUE depuis db.js
 
 const app = express();
 app.use(cors());
 app.use(express.json());
-// 2. On dit à Express d'utiliser ces routes avec le préfixe /api/auth
-app.use('/api/auth', authRoutes);
-// Connexion à PostgreSQL via l'URL définie dans le docker-compose
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
 
+// On branche les routes
+app.use('/api/auth', authRoutes);
+
+// Route de test
 app.get('/', async (req, res) => {
   try {
-    // Petit test pour voir si la BDD répond
     const result = await pool.query('SELECT NOW()');
     res.json({ 
       status: "API Footix en ligne 🚀", 
