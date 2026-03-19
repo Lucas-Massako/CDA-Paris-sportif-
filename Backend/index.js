@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const authRoutes = require('./routes/authRoutes');
-const pool = require('./db'); // On importe le pool UNIQUE depuis db.js
+const pool = require('./config/db'); // On importe le pool UNIQUE depuis db.js
 
 const app = express();
 app.use(cors());
