@@ -1,8 +1,31 @@
-// Configuration de l'URL de ton API (ton container Docker)
 const API_URL = "http://localhost:8000";
 
-// --- LOGIQUE D'AFFICHAGE ---
-// (Tes fonctions showRegister, showLogin, etc. ne changent pas)
+// --- 1. SÉCURITÉ ET REDIRECTIONS (Le "Check" intelligent) ---
+document.addEventListener("DOMContentLoaded", () => {
+    const token = localStorage.getItem('token');
+    const userName = localStorage.getItem('userName');
+    
+    // On regarde sur quelle page on est actuellement
+    const currentPage = window.location.pathname.split('/').pop();
+
+    if (currentPage === 'log.html' || currentPage === '') {
+        // SI ON EST SUR LA PAGE LOGIN : et qu'on a déjà un token, on file sur main.html
+        if (token && userName) {
+            window.location.href = "main.html";
+        }
+    } else if (currentPage === 'main.html') {
+        // SI ON EST SUR LE MAIN : et qu'on n'a PAS de token, on est renvoyé au login (Sécurité !)
+        if (!token || !userName) {
+            window.location.href = "log.html";
+        } else {
+            // Si on est bien connecté, on affiche le nom dans la barre de navigation
+            const userNameDisplay = document.getElementById('userNameDisplay');
+            if (userNameDisplay) userNameDisplay.textContent = userName;
+        }
+    }
+});
+
+// --- 2. LOGIQUE D'AFFICHAGE (Uniquement pour log.html) ---
 function showRegister() {
     document.getElementById('loginForm').classList.add('hidden');
     document.getElementById('registerForm').classList.remove('hidden');
@@ -17,15 +40,17 @@ function showLogin() {
 
 function showError(id, message) {
     const el = document.getElementById(id);
-    el.textContent = message;
-    el.classList.add('show');
+    if (el) {
+        el.textContent = message;
+        el.classList.add('show');
+    }
 }
 
 function clearErrors() {
     document.querySelectorAll('.error').forEach(el => el.textContent = "");
 }
 
-// --- LOGIQUE D'INSCRIPTION ---
+// --- 3. LOGIQUE D'INSCRIPTION ---
 async function register() {
     clearErrors();
     const name = document.getElementById('registerName').value;
@@ -45,6 +70,7 @@ async function register() {
             body: JSON.stringify({ name, email, password })
         });
         const data = await response.json();
+        
         if (response.ok) {
             alert("Inscription réussie ! Connectez-vous.");
             showLogin();
@@ -56,7 +82,7 @@ async function register() {
     }
 }
 
-// --- LOGIQUE DE CONNEXION ---
+// --- 4. LOGIQUE DE CONNEXION ---
 async function login() {
     clearErrors();
     const email = document.getElementById('loginEmail').value;
@@ -72,15 +98,12 @@ async function login() {
         const data = await response.json();
 
         if (response.ok) {
-            // --- LE CHANGEMENT EST ICI ---
-            // On sauvegarde le token JWT reçu du serveur
+            // SAUVEGARDE EN MÉMOIRE
             localStorage.setItem('token', data.token); 
+            localStorage.setItem('userName', data.user.name); 
             
-            // On stocke le nom pour le dashboard
-            document.getElementById('userName').textContent = data.user.name;
-            document.getElementById('loginForm').classList.add('hidden');
-            document.getElementById('dashboard').classList.remove('hidden');
-            document.getElementById('formTitle').textContent = "Dashboard";
+            // REDIRECTION VERS L'APPLICATION
+            window.location.href = "main.html";
         } else {
             showError('loginEmailError', data.message || "Identifiants incorrects");
         }
@@ -89,18 +112,12 @@ async function login() {
     }
 }
 
+// --- 5. LOGIQUE DE DÉCONNEXION ---
 function logout() {
-    // 1. On supprime le token
+    // On supprime le token
     localStorage.removeItem('token');
-    
-    // 2. Optionnel : On peut aussi supprimer d'autres infos si tu en as stocké
-    // localStorage.removeItem('userName'); 
+    localStorage.removeItem('userName'); 
 
-    // 3. On redirige l'affichage vers le formulaire de login
-    document.getElementById('dashboard').classList.add('hidden');
-    document.getElementById('loginForm').classList.remove('hidden');
-    document.getElementById('formTitle').textContent = "Connexion";
-
-    // 4. Petit message de confirmation en console
-    console.log("Token supprimé, utilisateur déconnecté.");
+    // On redirige vers le login
+    window.location.href = "log.html";
 }

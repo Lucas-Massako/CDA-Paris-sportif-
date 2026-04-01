@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CDA Bet - Dashboard (Vraies Cotes)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); min-height: 100vh; }
+        .cote-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2); }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+    </style>
+    <script src="./auth.js"></script>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-7xl mx-auto bg-white rounded-[2rem] shadow-2xl overflow-hidden relative">
+        
+        <header class="border-b border-gray-100 px-8 py-4 flex flex-col md:flex-row items-center justify-between gap-6 bg-white/80 backdrop-blur-md sticky top-0 z-40">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black shadow-lg shadow-indigo-200">⚽</div>
+                <h1 class="text-xl font-bold text-gray-900">CDA Bet</h1>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <label for="league-select" class="text-xs font-bold text-gray-400 uppercase">Championnat :</label>
+                <select id="league-select" onchange="changeLeague()" class="bg-gray-50 border border-gray-200 text-gray-700 text-sm font-semibold rounded-xl px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer transition-all">
+                    <option value="soccer_france_ligue_one">Ligue 1 (France)</option>
+                    <option value="soccer_epl">Premier League (UK)</option>
+                    <option value="soccer_spain_la_liga">La Liga (Espagne)</option>
+                    <option value="soccer_italy_serie_a">Serie A (Italie)</option>
+                    <option value="soccer_germany_bundesliga">Bundesliga (Allemagne)</option>
+                </select>
+            </div>
+
+            <div class="hidden md:flex items-center gap-4 bg-gray-50 p-2 rounded-2xl border border-gray-100">
+                <button onclick="window.location.href='board.html'" class="text-indigo-600 hover:bg-indigo-100 bg-white shadow-sm font-bold text-sm px-3 py-1.5 rounded-lg border border-indigo-100 flex items-center gap-2 transition">
+                    🏆 Leaderboard
+                </button>
+
+                <div class="bg-yellow-100 text-yellow-700 px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1 shadow-sm">
+                    🪙 1000 pts
+                </div>
+
+                <div class="flex items-center gap-2 px-2 border-l border-gray-200">
+                    <div class="w-7 h-7 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 text-xs font-bold">👤</div>
+                    <span id="userNameDisplay" class="text-sm font-bold text-gray-800">...</span>
+                </div>
+                <button onclick="logout()" class="bg-red-50 text-red-600 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-xl text-xs font-bold transition">
+                    Déconnexion
+                </button>
+            </div>
+        </header>
+
+        <main class="p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 bg-gray-50/30">
+            
+            <div class="lg:col-span-8">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-extrabold text-gray-900 tracking-tight">Prochains Matchs (Cotes Réelles)</h2>
+                    <p id="league-subtitle" class="text-sm text-gray-500 italic">Chargement...</p>
+                </div>
+
+                <div id="container-next" class="flex flex-col gap-4 mb-12"></div>
+
+                <div class="flex items-center gap-3 mb-6">
+                    <h2 class="text-xl font-bold text-gray-400">Derniers scores</h2>
+                    <div class="h-px flex-1 bg-gray-200"></div>
+                </div>
+                <div id="container-past" class="grid grid-cols-1 md:grid-cols-2 gap-3 opacity-80 mb-8"></div>
+            </div>
+
+            <div class="lg:col-span-4 flex flex-col gap-6">
+                
+                <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2 border-b border-gray-100 pb-3">
+                        📝 Mes Pronostics
+                    </h3>
+                    <div id="bet-slip-empty" class="text-center py-4">
+                        <p class="text-xs text-gray-400">Aucun pari en cours.</p>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden flex flex-col max-h-[500px]">
+                    <div class="p-4 bg-gray-50 border-b border-gray-100">
+                        <h3 class="font-black text-gray-800 text-sm uppercase tracking-widest flex items-center gap-2">
+                            📊 Classement <span id="side-ranking-name" class="text-indigo-600 italic text-xs"></span>
+                        </h3>
+                    </div>
+                    <div class="overflow-y-auto custom-scrollbar">
+                        <table class="w-full text-left">
+                            <thead class="bg-white sticky top-0 text-[9px] text-gray-400 uppercase border-b border-gray-100">
+                                <tr>
+                                    <th class="p-3 w-8">#</th>
+                                    <th class="p-3">Club</th>
+                                    <th class="p-3 text-right">Pts</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ranking-body-side" class="divide-y divide-gray-50">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // ==============================================================================
+        // 🔑 1. CONFIGURATION DE TON API THE ODDS
+        // Rends-toi sur https://the-odds-api.com/ et récupère ta clé API gratuite.
+        // Colle ta clé à la place de "TA_CLE_API_ICI" en gardant les guillemets.
+        // ==============================================================================
+        const ODDS_API_KEY = "2ba6fa8df2af13fc3cff7d89a7b7f997"; 
+        
+        // Ancienne clé pour garder le classement fonctionnel
+        const SPORTSDB_API_BASE = "https://www.thesportsdb.com/api/v1/json/123";
+
+        // Dictionnaire pour lier la nouvelle API à l'ancienne (pour le classement)
+        const leagueMapping = {
+            "soccer_france_ligue_one": "4334",
+            "soccer_epl": "4328",
+            "soccer_spain_la_liga": "4335",
+            "soccer_italy_serie_a": "4332",
+            "soccer_germany_bundesliga": "4331"
+        };
+
+        async function fetchLeagueData(oddsLeagueId) {
+            if(ODDS_API_KEY === "TA_CLE_API_ICI") {
+                alert("⚠️ Attention : Tu dois entrer ta clé The Odds API dans le code !");
+            }
+
+            const select = document.getElementById('league-select');
+            const leagueName = select.options[select.selectedIndex].text;
+            const sportsDbId = leagueMapping[oddsLeagueId]; // Récupère l'ID pour l'ancienne API
+
+            document.getElementById('league-subtitle').textContent = `Pronostics pour la ${leagueName}`;
+            document.getElementById('side-ranking-name').textContent = leagueName;
+
+            try {
+                document.getElementById('container-next').innerHTML = '<p class="text-indigo-500 font-bold animate-pulse py-4">Chargement des vraies cotes du marché...</p>';
+
+                // On lance les appels API en parallèle pour aller plus vite
+                const [oddsResp, pastResp, rankResp] = await Promise.all([
+                    // 1. Appel aux VRAIS matchs et VRAIES cotes (The Odds API)
+                    fetch(`https://api.the-odds-api.com/v4/sports/${oddsLeagueId}/odds/?apiKey=${ODDS_API_KEY}&regions=eu&markets=h2h`),
+                    // 2. Appel aux anciens scores (TheSportsDB)
+                    fetch(`${SPORTSDB_API_BASE}/eventspastleague.php?id=${sportsDbId}`),
+                    // 3. Appel au classement (TheSportsDB)
+                    fetch(`${SPORTSDB_API_BASE}/lookuptable.php?l=${sportsDbId}&s=2023-2024`) 
+                ]);
+
+                const nextData = await oddsResp.json();
+                const pastData = await pastResp.json();
+                const rankData = await rankResp.json();
+
+                renderNextOdds(nextData);
+                renderPast(pastData.events || []);
+                renderSideRanking(rankData.table || []);
+            } catch (error) {
+                console.error("Erreur API:", error);
+                document.getElementById('container-next').innerHTML = '<p class="text-red-500">Erreur lors du chargement des cotes. Vérifie ta clé API.</p>';
+            }
+        }
+
+        // --- AFFICHAGE DES VRAIS MATCHS ET COTES ---
+        function renderNextOdds(matches) {
+            const container = document.getElementById('container-next');
+            container.innerHTML = ''; 
+
+            if (!matches || matches.length === 0 || matches.message) {
+                container.innerHTML = '<div class="bg-gray-50 p-6 rounded-2xl text-center text-gray-500 font-medium border border-dashed border-gray-200">Aucune cote disponible actuellement pour ce championnat.</div>';
+                return;
+            }
+
+            // On affiche les 10 prochains vrais matchs
+            matches.slice(0, 10).forEach(match => {
+                
+                // Formatage de la date de The Odds API
+                const dateMatch = new Date(match.commence_time).toLocaleString('fr-FR', {
+                    day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
+                }).replace(':', 'H');
+
+                // Extraction des cotes du premier bookmaker de la liste (ex: Unibet, Betclic...)
+                let c1 = "-", cN = "-", c2 = "-";
+                if (match.bookmakers && match.bookmakers.length > 0) {
+                    const market = match.bookmakers[0].markets.find(m => m.key === 'h2h');
+                    if (market && market.outcomes) {
+                        // On associe les cotes aux équipes correspondantes
+                        c1 = market.outcomes.find(o => o.name === match.home_team)?.price.toFixed(2) || "-";
+                        c2 = market.outcomes.find(o => o.name === match.away_team)?.price.toFixed(2) || "-";
+                        cN = market.outcomes.find(o => o.name === 'Draw')?.price.toFixed(2) || "-";
+                    }
+                }
+
+                container.innerHTML += `
+                <div class="bg-white border border-gray-200 p-4 rounded-xl flex flex-col md:flex-row items-center justify-between shadow-sm hover:border-indigo-300 transition-colors">
+                    <div class="flex flex-col gap-1 flex-1 w-full md:w-auto text-center md:text-left mb-3 md:mb-0">
+                        <span class="text-[9px] font-bold text-indigo-500 uppercase tracking-widest">${dateMatch}</span>
+                        <div class="flex items-center justify-center md:justify-start gap-2 mt-1">
+                            <span class="font-bold text-gray-800 text-sm truncate">${match.home_team}</span>
+                            <span class="text-gray-300 font-black text-[10px]">VS</span>
+                            <span class="font-bold text-gray-800 text-sm truncate">${match.away_team}</span>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button class="cote-btn bg-gray-50 border border-gray-100 hover:bg-indigo-600 hover:text-white px-4 py-2 rounded-lg transition-all flex flex-col items-center min-w-[50px]">
+                            <span class="text-[8px] uppercase font-bold opacity-60">1</span>
+                            <span class="text-xs font-black">${c1}</span>
+                        </button>
+                        <button class="cote-btn bg-gray-50 border border-gray-100 hover:bg-indigo-600 hover:text-white px-4 py-2 rounded-lg transition-all flex flex-col items-center min-w-[50px]">
+                            <span class="text-[8px] uppercase font-bold opacity-60">N</span>
+                            <span class="text-xs font-black">${cN}</span>
+                        </button>
+                        <button class="cote-btn bg-gray-50 border border-gray-100 hover:bg-indigo-600 hover:text-white px-4 py-2 rounded-lg transition-all flex flex-col items-center min-w-[50px]">
+                            <span class="text-[8px] uppercase font-bold opacity-60">2</span>
+                            <span class="text-xs font-black">${c2}</span>
+                        </button>
+                    </div>
+                </div>`;
+            });
+        }
+
+        // --- AFFICHAGE DU CLASSEMENT ET DES SCORES (Reste géré par TheSportsDB) ---
+        function renderSideRanking(table) {
+            const container = document.getElementById('ranking-body-side');
+            container.innerHTML = '';
+            table.forEach(team => {
+                container.innerHTML += `
+                <tr class="hover:bg-indigo-50/30 transition">
+                    <td class="p-3 text-[11px] font-bold text-gray-400 text-center">${team.intRank}</td>
+                    <td class="p-3 flex items-center gap-2">
+                        <img src="${team.strTeamBadge}" class="w-4 h-4 object-contain">
+                        <span class="text-xs font-bold text-gray-700 truncate max-w-[100px]">${team.strTeam}</span>
+                    </td>
+                    <td class="p-3 text-right font-black text-indigo-600 text-xs">${team.intPoints}</td>
+                </tr>`;
+            });
+        }
+
+        function renderPast(events) {
+            const container = document.getElementById('container-past');
+            container.innerHTML = '';
+            events.slice(0, 6).forEach(event => {
+                container.innerHTML += `
+                <div class="bg-white border border-gray-100 p-3 rounded-xl flex justify-between items-center shadow-sm">
+                    <span class="text-[10px] font-bold text-gray-600 truncate flex-1 text-right pr-2">${event.strHomeTeam}</span>
+                    <div class="bg-indigo-600 text-white px-2 py-0.5 rounded font-black text-[10px]">${event.intHomeScore} - ${event.intAwayScore}</div>
+                    <span class="text-[10px] font-bold text-gray-600 truncate flex-1 text-left pl-2">${event.strAwayTeam}</span>
+                </div>`;
+            });
+        }
+
+        function changeLeague() {
+            fetchLeagueData(document.getElementById('league-select').value);
+        }
+
+        // Lancement initial sur la Ligue 1
+        fetchLeagueData("soccer_france_ligue_one");
+    </script>
+</body>
+</html>
