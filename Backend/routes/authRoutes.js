@@ -1,16 +1,14 @@
 const express = require('express');
-const router = express.Router(); // <--- CRUCIAL : On crée l'objet router
-const bcrypt = require('bcrypt'); // <--- CRUCIAL : Pour le hachage
-const pool = require('../config/db.js');    // <--- Vérifie que ton fichier de config BDD est bien là
+const router = express.Router();
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken'); // <-- Nouvel import
+const pool = require('../config/db'); 
 
 // --- ROUTE INSCRIPTION ---
 router.post('/register', async (req, res) => {
     const { name, email, password } = req.body; 
-    
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
-
-        // On utilise 'mot_de_passe' car tu l'as renommé avec l'underscore tout à l'heure !
         const query = `
             INSERT INTO utilisateur (nom, email, mot_de_passe) 
             VALUES ($1, $2, $3) 
@@ -28,7 +26,7 @@ router.post('/register', async (req, res) => {
     }
 });
 
-// --- ROUTE CONNEXION ---
+// --- ROUTE CONNEXION (AVEC JWT) ---
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
     try {
@@ -39,15 +37,23 @@ router.post('/login', async (req, res) => {
         }
 
         const user = result.rows[0];
-        // On utilise user.mot_de_passe (le nom exact dans ta BDD avec underscore)
         const isMatch = await bcrypt.compare(password, user.mot_de_passe);
 
         if (!isMatch) {
             return res.status(401).json({ message: "Identifiants incorrects" });
         }
 
+        // --- GÉNÉRATION DU TOKEN JWT ---
+        // On signe un token avec l'ID et l'email, valable 2 heures
+        const token = jwt.sign(
+            { id: user.id_user, email: user.email }, 
+            process.env.JWT_SECRET || 'ma_cle_secrete_test', // Clé de secours si .env n'est pas lu
+            { expiresIn: '2h' }
+        );
+
         res.json({ 
             message: "Connexion réussie !", 
+            token: token, // On envoie le token au Front
             user: { 
                 name: user.nom, 
                 email: user.email 
@@ -59,5 +65,4 @@ router.post('/login', async (req, res) => {
     }
 });
 
-// --- EXPORT DU ROUTER ---
-module.exports = router; // <--- CRUCIAL : Pour que index.js puisse l'utiliser
+module.exports = router;
