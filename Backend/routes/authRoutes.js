@@ -1,20 +1,20 @@
 const express = require('express');
-const router = express.Router();
-const bcrypt = require('bcrypt');
-const pool = require('../config/db'); 
+const router = express.Router(); // <--- CRUCIAL : On crée l'objet router
+const bcrypt = require('bcrypt'); // <--- CRUCIAL : Pour le hachage
+const pool = require('../config/db.js');    // <--- Vérifie que ton fichier de config BDD est bien là
 
 // --- ROUTE INSCRIPTION ---
 router.post('/register', async (req, res) => {
-    const { name, email, password } = req.body;
+    const { name, email, password } = req.body; 
+    
     try {
-        const saltRounds = 10;
-        const hashedPassword = await bcrypt.hash(password, saltRounds);
+        const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Noms exacts de ta colonne Name sur pgAdmin : nom, email, mot_de_passe
+        // On utilise 'mot_de_passe' car tu l'as renommé avec l'underscore tout à l'heure !
         const query = `
             INSERT INTO utilisateur (nom, email, mot_de_passe) 
             VALUES ($1, $2, $3) 
-            RETURNING id_utilisateur, nom, email`;
+            RETURNING id_user, nom, email`;
         
         const result = await pool.query(query, [name, email, hashedPassword]);
         
@@ -32,7 +32,6 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
     try {
-        // On cherche dans la colonne "email"
         const result = await pool.query('SELECT * FROM utilisateur WHERE email = $1', [email]);
         
         if (result.rows.length === 0) {
@@ -40,7 +39,7 @@ router.post('/login', async (req, res) => {
         }
 
         const user = result.rows[0];
-        // On compare avec la colonne "mot_de_passe"
+        // On utilise user.mot_de_passe (le nom exact dans ta BDD avec underscore)
         const isMatch = await bcrypt.compare(password, user.mot_de_passe);
 
         if (!isMatch) {
@@ -55,9 +54,10 @@ router.post('/login', async (req, res) => {
             } 
         });
     } catch (err) {
-        console.error("Erreur Login:", err.message);
+        console.error("Erreur Connexion:", err.message);
         res.status(500).json({ message: "Erreur serveur" });
     }
 });
 
-module.exports = router;
+// --- EXPORT DU ROUTER ---
+module.exports = router; // <--- CRUCIAL : Pour que index.js puisse l'utiliser
