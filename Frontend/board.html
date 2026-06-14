@@ -75,7 +75,10 @@
             try {
                 // ⚠️ PLUS TARD : Tu devras créer cette route dans ton Backend Node.js
                 const token = localStorage.getItem('token');
-                const response = await fetch('http://localhost:8000/api/users/leaderboard', {
+                const BACKEND = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+                  ? 'http://localhost:8000'
+                  : 'https://VOTRE_URL.up.railway.app';
+                const response = await fetch(`${BACKEND}/api/users/leaderboard`, {
                     headers: { 'Authorization': 'Bearer ' + token }
                 });
                 

@@ -1,4 +1,4 @@
-FROM node:18-alpine
+FROM node:20-alpine
 
 # Outils de compilation nécessaires pour bcrypt (node-gyp)
 RUN apk add --no-cache python3 make g++

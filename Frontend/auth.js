@@ -1,4 +1,8 @@
-const API_URL = "http://localhost:8000";
+// ⚙️ URL auto-détectée : localhost en dev, Railway en prod
+// Après déploiement Railway, remplace VOTRE_URL par ton URL Railway
+const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  ? 'http://localhost:8000'
+  : 'https://VOTRE_URL.up.railway.app';
 
 // --- 1. SÉCURITÉ ET REDIRECTIONS (Le "Check" intelligent) ---
 document.addEventListener("DOMContentLoaded", () => {
