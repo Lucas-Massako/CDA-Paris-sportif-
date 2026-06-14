@@ -2,7 +2,7 @@
 // Après déploiement Railway, remplace VOTRE_URL par ton URL Railway
 const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
   ? 'http://localhost:8000'
-  : 'https://VOTRE_URL.up.railway.app';
+  : 'https://api-production-0502.up.railway.app';
 
 // --- 1. SÉCURITÉ ET REDIRECTIONS (Le "Check" intelligent) ---
 document.addEventListener("DOMContentLoaded", () => {

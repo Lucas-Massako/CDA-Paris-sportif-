@@ -6,59 +6,61 @@
     <title>Connexion / Inscription - Projet CDA</title>
     <link rel="stylesheet" href="./stylelog.css">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>if(localStorage.getItem('cdabet_theme')==='dark')document.documentElement.classList.add('dark');</script>
     <script src="./auth.js"></script>
+    <script src="./theme.js"></script>
 </head>
 <body>
 
     <div class="container">
         <div class="card-header">
-            <h2 id="formTitle">Connexion</h2>
+            <h2 id="formTitle" data-i18n="login.title">Connexion</h2>
         </div>
 
         <div class="form-container">
             <div id="loginForm">
                 <div class="success-message" id="loginSuccess"></div>
                 <div class="input-group">
-                    <label>Email</label>
+                    <label data-i18n="login.email">Email</label>
                     <input type="email" id="loginEmail" placeholder="votre@email.com">
                     <span class="error" id="loginEmailError"></span>
                 </div>
                 <div class="input-group">
-                    <label>Mot de passe</label>
+                    <label data-i18n="login.pwd">Mot de passe</label>
                     <input type="password" id="loginPassword" placeholder="••••••••">
                     <span class="error" id="loginPasswordError"></span>
                 </div>
-                <button onclick="login()">Se connecter</button>
+                <button onclick="login()" data-i18n="login.btn">Se connecter</button>
                 <div class="switch-form">
-                    Pas encore de compte ? <a onclick="showRegister()">S'inscrire</a>
+                    <span data-i18n="login.switch">Pas encore de compte ?</span> <a onclick="showRegister()" data-i18n="login.switchBtn">S'inscrire</a>
                 </div>
             </div>
 
             <div id="registerForm" class="hidden">
                 <div class="success-message" id="registerSuccess"></div>
                 <div class="input-group">
-                    <label>Nom complet</label>
+                    <label data-i18n="reg.name">Nom complet</label>
                     <input type="text" id="registerName" placeholder="Jean Dupont">
                     <span class="error" id="registerNameError"></span>
                 </div>
                 <div class="input-group">
-                    <label>Email</label>
+                    <label data-i18n="reg.email">Email</label>
                     <input type="email" id="registerEmail" placeholder="votre@email.com">
                     <span class="error" id="registerEmailError"></span>
                 </div>
                 <div class="input-group">
-                    <label>Mot de passe</label>
+                    <label data-i18n="reg.pwd">Mot de passe</label>
                     <input type="password" id="registerPassword" placeholder="••••••••">
                     <span class="error" id="registerPasswordError"></span>
                 </div>
                 <div class="input-group">
-                    <label>Confirmer le mot de passe</label>
+                    <label data-i18n="reg.confirm">Confirmer le mot de passe</label>
                     <input type="password" id="registerConfirmPassword" placeholder="••••••••">
                     <span class="error" id="registerConfirmPasswordError"></span>
                 </div>
-                <button onclick="register()">S'inscrire</button>
+                <button onclick="register()" data-i18n="reg.btn">S'inscrire</button>
                 <div class="switch-form">
-                    Déjà un compte ? <a onclick="showLogin()">Se connecter</a>
+                    <span data-i18n="reg.switch">Déjà un compte ?</span> <a onclick="showLogin()" data-i18n="reg.switchBtn">Se connecter</a>
                 </div>
             </div>
 

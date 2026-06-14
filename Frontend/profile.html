@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Footix — Mon Profil</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>if(localStorage.getItem('cdabet_theme')==='dark')document.documentElement.classList.add('dark');</script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap');
         body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); min-height: 100vh; }
@@ -14,6 +15,7 @@
         input:focus, select:focus { outline: none; box-shadow: 0 0 0 3px rgba(99,102,241,.2); }
     </style>
     <script src="./auth.js"></script>
+    <script src="./theme.js"></script>
 </head>
 <body class="p-4 md:p-8">
 
@@ -27,18 +29,20 @@
         </div>
         <div class="flex items-center gap-3">
             <button onclick="window.location.href='main.html'"
-                class="text-sm font-bold text-indigo-600 hover:bg-indigo-50 px-3 py-1.5 rounded-xl border border-indigo-100 transition">
+                class="text-sm font-bold text-indigo-600 hover:bg-indigo-50 px-3 py-1.5 rounded-xl border border-indigo-100 transition"
+                data-i18n="nav.dashboard">
                 🏠 Dashboard
             </button>
             <button onclick="window.location.href='board.html'"
                 class="text-sm font-bold text-gray-600 hover:bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-100 transition">
-                🏆 Leaderboard
+                🏆 <span data-i18n="nav.leaderboard">Leaderboard</span>
             </button>
             <div class="bg-yellow-100 text-yellow-700 px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1">
                 🪙 <span id="bankrollDisplay">…</span> pts
             </div>
             <button onclick="logout()"
-                class="bg-red-50 text-red-600 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-xl text-xs font-bold transition">
+                class="bg-red-50 text-red-600 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-xl text-xs font-bold transition"
+                data-i18n="nav.logout">
                 Déconnexion
             </button>
         </div>
@@ -99,8 +103,9 @@
                 </div>
 
                 <button onclick="saveProfile()"
-                    class="bg-indigo-600 hover:bg-indigo-700 text-white font-black py-2.5 rounded-xl transition text-sm mt-1">
-                    Enregistrer
+                    class="bg-indigo-600 hover:bg-indigo-700 text-white font-black py-2.5 rounded-xl transition text-sm mt-1"
+                    data-i18n="profile.save">
+                    Sauvegarder
                 </button>
                 <p id="profileMsg" class="text-xs text-center font-bold hidden"></p>
             </div>
@@ -151,7 +156,7 @@
 <script>
     const API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
       ? 'http://localhost:8000'
-      : 'https://VOTRE_URL.up.railway.app';
+      : 'https://api-production-0502.up.railway.app';
     let profileData = null;
     let allTeams = [];
 

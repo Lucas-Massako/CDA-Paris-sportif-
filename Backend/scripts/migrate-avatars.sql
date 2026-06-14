@@ -30,7 +30,9 @@ ON CONFLICT DO NOTHING;
 -- 3. Colonnes supplémentaires sur utilisateur
 ALTER TABLE utilisateur
     ADD COLUMN IF NOT EXISTS id_avatar_actif    INT REFERENCES avatars(id_avatar),
-    ADD COLUMN IF NOT EXISTS id_equipe_favorite INT REFERENCES equipe(id_equipe);
+    ADD COLUMN IF NOT EXISTS id_equipe_favorite INT REFERENCES equipe(id_equipe),
+    ADD COLUMN IF NOT EXISTS is_admin           BOOLEAN DEFAULT FALSE,
+    ADD COLUMN IF NOT EXISTS dernier_bonus      DATE DEFAULT NULL;
 
 -- 4. Table des avatars débloqués par utilisateur
 CREATE TABLE IF NOT EXISTS user_avatars (
