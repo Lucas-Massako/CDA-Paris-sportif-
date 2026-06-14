@@ -273,18 +273,8 @@
                 '<div class="text-center py-8 text-indigo-400 text-sm animate-pulse">Chargement des matchs WC 2026...</div>';
 
             try {
-                // 1. Trouver l'ID du tournoi FIFA World Cup sur TheSportsDB
-                const searchRes  = await fetch(`${API_BASE}/searchleagues.php?t=FIFA+World+Cup`);
-                const searchData = await searchRes.json();
-                const wcLeague   = (searchData.countrys || []).find(l =>
-                    l.strSport === 'Soccer' &&
-                    l.strLeague.toLowerCase().includes('world cup') &&
-                    !l.strLeague.toLowerCase().includes('women') &&
-                    !l.strLeague.toLowerCase().includes('u-') &&
-                    !l.strLeague.toLowerCase().includes('under')
-                );
-                if (!wcLeague) throw new Error('FIFA World Cup non trouvé');
-                const wcId = wcLeague.idLeague;
+                // ID TheSportsDB FIFA World Cup 2026 (vérifié : retourne les vrais matchs)
+                const wcId = '4429';
 
                 // 2. Matchs à venir + résultats récents en parallèle
                 const [nextRes, pastRes] = await Promise.all([
