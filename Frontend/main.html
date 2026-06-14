@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CDA Bet - Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>if(localStorage.getItem('cdabet_theme')==='dark')document.documentElement.classList.add('dark');</script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap');
         body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); min-height: 100vh; }
@@ -13,6 +14,7 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
     </style>
     <script src="./auth.js"></script>
+    <script src="./theme.js"></script>
 </head>
 <body class="p-4 md:p-8">
 
@@ -25,7 +27,7 @@
             </div>
 
             <div class="flex items-center gap-3">
-                <label for="league-select" class="text-xs font-bold text-gray-400 uppercase">Championnat :</label>
+                <label for="league-select" class="text-xs font-bold text-gray-400 uppercase" data-i18n="main.champ">Championnat :</label>
                 <select id="league-select" onchange="changeLeague()" class="bg-gray-50 border border-gray-200 text-gray-700 text-sm font-semibold rounded-xl px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer transition-all">
                     <option value="wc2026" selected>🌍 Coupe du Monde 2026</option>
                     <option value="4480">🏆 Ligue des Champions</option>
@@ -67,14 +69,14 @@
             
             <div class="lg:col-span-8">
                 <div class="mb-6">
-                    <h2 class="text-2xl font-extrabold text-gray-900 tracking-tight">Prochains Matchs</h2>
+                    <h2 class="text-2xl font-extrabold text-gray-900 tracking-tight" data-i18n="main.title">Prochains Matchs</h2>
                     <p id="league-subtitle" class="text-sm text-gray-500 italic">Chargement des matchs...</p>
                 </div>
 
                 <div id="container-next" class="flex flex-col gap-4 mb-12"></div>
 
                 <div class="flex items-center gap-3 mb-6">
-                    <h2 class="text-xl font-bold text-gray-400">Derniers scores</h2>
+                    <h2 class="text-xl font-bold text-gray-400" data-i18n="main.past">Derniers scores</h2>
                     <div class="h-px flex-1 bg-gray-200"></div>
                 </div>
                 <div id="container-past" class="grid grid-cols-1 md:grid-cols-2 gap-3 opacity-80 mb-8"></div>
@@ -83,7 +85,7 @@
             <div class="lg:col-span-4 flex flex-col gap-6">
                 
                 <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm sticky top-24 max-h-[420px] flex flex-col">
-                    <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2 border-b border-gray-100 pb-3 shrink-0">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2 border-b border-gray-100 pb-3 shrink-0" data-i18n="main.bets">
                         📝 Mes Pronostics
                     </h3>
                     <div id="bet-list" class="flex flex-col gap-2 overflow-y-auto custom-scrollbar">
@@ -506,7 +508,7 @@
                 <div class="bg-gray-50 border border-gray-100 rounded-xl p-3 flex flex-col gap-1.5">
                     <div class="flex items-center justify-between gap-1">
                         <span class="text-[10px] font-bold text-gray-700 truncate flex-1">${b.equipe_domicile} vs ${b.equipe_exterieur}</span>
-                        <span class="text-[9px] font-black px-1.5 py-0.5 rounded ${style} shrink-0">${b.statut}</span>
+                        <span class="text-[9px] font-black px-1.5 py-0.5 rounded ${style} shrink-0">${window.t ? window.t('status.'+b.statut) : b.statut}</span>
                     </div>
                     <div class="flex items-center gap-2 text-[10px] text-gray-500 font-bold">
                         <span class="bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded font-black">${pronosticLabel[b.pronostic]}</span>
