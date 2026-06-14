@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { getUpcomingMatches } = require('../controllers/matchController');
+const { getUpcomingMatches, getExternalCotes } = require('../controllers/matchController');
 const { verifyToken } = require('../middlewares/authMiddleware');
 
-router.get('/', verifyToken, getUpcomingMatches);
+router.get('/',              verifyToken, getUpcomingMatches);
+router.post('/external-cotes', verifyToken, getExternalCotes);
 
 module.exports = router;

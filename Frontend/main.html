@@ -290,18 +290,14 @@
             }
 
             upcoming.forEach(match => {
-                const cote1 = (Math.random() * (2.5 - 1.1) + 1.1).toFixed(2);
-                const coteN = (Math.random() * (4.5 - 2.5) + 2.5).toFixed(2);
-                const cote2 = (Math.random() * (3.5 - 1.5) + 1.5).toFixed(2);
-
                 const dateObj = new Date(match.dateheure);
                 const dateStr = dateObj.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'long' });
                 const heureStr = dateObj.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 
                 const cotes = [
-                    { label: '1', value: 1, cote: cote1 },
-                    { label: 'N', value: 0, cote: coteN },
-                    { label: '2', value: 2, cote: cote2 }
+                    { label: '1', value: 1, cote: parseFloat(match.cote_1).toFixed(2) },
+                    { label: 'N', value: 0, cote: parseFloat(match.cote_n).toFixed(2) },
+                    { label: '2', value: 2, cote: parseFloat(match.cote_2).toFixed(2) }
                 ];
 
                 // Adapter au format attendu par openBetModal
@@ -350,6 +346,7 @@
             document.getElementById('side-ranking-name').textContent = leagueName;
 
             try {
+                const token = localStorage.getItem('token');
                 const [nextResp, pastResp, rankResp] = await Promise.all([
                     fetch(`${API_BASE}/eventsnextleague.php?id=${leagueId}`),
                     fetch(`${API_BASE}/eventspastleague.php?id=${leagueId}`),
@@ -360,7 +357,22 @@
                 const pastData = await pastResp.json();
                 const rankData = await rankResp.json();
 
-                renderNext(nextData.events || []);
+                const events = nextData.events || [];
+                let cotesMap = {};
+
+                if (events.length > 0) {
+                    const ids = events.map(e => e.idEvent);
+                    try {
+                        const cotesRes = await fetch(`${BACKEND}/api/matches/external-cotes`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                            body: JSON.stringify({ ids })
+                        });
+                        if (cotesRes.ok) cotesMap = await cotesRes.json();
+                    } catch (e) { /* cotes non critiques, on continue */ }
+                }
+
+                renderNext(events, cotesMap);
                 renderPast(pastData.events || []);
                 renderSideRanking(rankData.table || []);
             } catch (error) {
@@ -388,7 +400,7 @@
             });
         }
 
-        function renderNext(events) {
+        function renderNext(events, cotesMap) {
             const container = document.getElementById('container-next');
             container.innerHTML = '';
 
@@ -398,14 +410,11 @@
             }
 
             events.forEach(event => {
-                const cote1 = (Math.random() * (2.5 - 1.1) + 1.1).toFixed(2);
-                const coteN = (Math.random() * (4.5 - 2.5) + 2.5).toFixed(2);
-                const cote2 = (Math.random() * (3.5 - 1.5) + 1.5).toFixed(2);
-
+                const c = cotesMap[event.idEvent] || {};
                 const cotes = [
-                    { label: '1', value: 1, cote: cote1 },
-                    { label: 'N', value: 0, cote: coteN },
-                    { label: '2', value: 2, cote: cote2 }
+                    { label: '1', value: 1, cote: parseFloat(c.cote_1 || 1.50).toFixed(2) },
+                    { label: 'N', value: 0, cote: parseFloat(c.cote_n || 3.00).toFixed(2) },
+                    { label: '2', value: 2, cote: parseFloat(c.cote_2 || 2.00).toFixed(2) }
                 ];
 
                 const card = document.createElement('div');
