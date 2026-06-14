@@ -77,7 +77,7 @@
                 const token = localStorage.getItem('token');
                 const BACKEND = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
                   ? 'http://localhost:8000'
-                  : 'https://VOTRE_URL.up.railway.app';
+                  : 'https://api-production-0502.up.railway.app';
                 const response = await fetch(`${BACKEND}/api/users/leaderboard`, {
                     headers: { 'Authorization': 'Bearer ' + token }
                 });
