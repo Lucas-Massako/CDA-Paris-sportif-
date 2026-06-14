@@ -355,14 +355,34 @@
                 const [nextResp, pastResp, rankResp] = await Promise.all([
                     fetch(`${API_BASE}/eventsnextleague.php?id=${leagueId}`),
                     fetch(`${API_BASE}/eventspastleague.php?id=${leagueId}`),
-                    fetch(`${API_BASE}/lookuptable.php?l=${leagueId}&s=2023-2024`)
+                    fetch(`${API_BASE}/lookuptable.php?l=${leagueId}&s=2025-2026`)
                 ]);
 
                 const nextData = await nextResp.json();
                 const pastData = await pastResp.json();
                 const rankData = await rankResp.json();
 
-                const events = nextData.events || [];
+                let events = nextData.events || [];
+
+                // Fallback : si moins de 5 matchs à venir, essayer les saisons suivantes
+                if (events.length < 5) {
+                    const today = new Date();
+                    for (const season of ['2026-2027', '2025-2026']) {
+                        if (events.length >= 5) break;
+                        try {
+                            const sRes  = await fetch(`${API_BASE}/eventsseason.php?id=${leagueId}&s=${season}`);
+                            const sData = await sRes.json();
+                            if (sData.events) {
+                                const upcoming = sData.events
+                                    .filter(e => e.dateEvent && new Date(e.dateEvent) > today && !e.intHomeScore)
+                                    .sort((a, b) => new Date(a.dateEvent) - new Date(b.dateEvent))
+                                    .slice(0, 10);
+                                const seen = new Set(events.map(e => e.idEvent));
+                                events = [...events, ...upcoming.filter(e => !seen.has(e.idEvent))].slice(0, 10);
+                            }
+                        } catch (_) {}
+                    }
+                }
                 let cotesMap = {};
 
                 if (events.length > 0) {
