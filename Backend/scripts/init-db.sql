@@ -24,10 +24,10 @@ CREATE TABLE UTILISATEUR (
     ID_User SERIAL PRIMARY KEY,
     Nom VARCHAR(100) NOT NULL,
     Email VARCHAR(255) UNIQUE NOT NULL,
-    MotDePasse VARCHAR(255) NOT NULL, -- Hash bcrypt
+    MotDePasse VARCHAR(255) NOT NULL,
+    Bankroll INT NOT NULL DEFAULT 1000 CHECK (Bankroll >= 0),
     DateInscription TIMESTAMP DEFAULT NOW(),
-    
-    -- Contraintes de validation
+
     CONSTRAINT email_format CHECK (Email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$')
 );
 
@@ -67,14 +67,12 @@ CREATE TABLE MATCH (
     ID_EquipeDomicile INTEGER NOT NULL,
     ID_EquipeExterieur INTEGER NOT NULL,
     DateHeure TIMESTAMP NOT NULL,
-    ScoreFinal VARCHAR(20) DEFAULT NULL, -- Format "2-1" ou NULL si pas encore joué
-    
-    -- Clés étrangères
+    ScoreFinal VARCHAR(20) DEFAULT NULL,
+    ID_External VARCHAR(100) UNIQUE,
+
     CONSTRAINT fk_match_sport FOREIGN KEY (ID_Sport) REFERENCES SPORT(ID_Sport) ON DELETE CASCADE,
     CONSTRAINT fk_match_domicile FOREIGN KEY (ID_EquipeDomicile) REFERENCES EQUIPE(ID_Equipe) ON DELETE CASCADE,
     CONSTRAINT fk_match_exterieur FOREIGN KEY (ID_EquipeExterieur) REFERENCES EQUIPE(ID_Equipe) ON DELETE CASCADE,
-    
-    -- Contrainte métier: équipe domicile ≠ équipe extérieur
     CONSTRAINT check_different_teams CHECK (ID_EquipeDomicile <> ID_EquipeExterieur)
 );
 
@@ -108,19 +106,19 @@ CREATE TABLE PREFERENCE (
 CREATE TABLE PARII (
     ID_User INTEGER NOT NULL,
     ID_Match INTEGER NOT NULL,
-    Pronostic INTEGER NOT NULL, -- 1 = Domicile, 2 = Extérieur
-    EstFootix BOOLEAN DEFAULT FALSE, -- Calculé par CRON hebdomadaire
+    Pronostic INTEGER NOT NULL, -- 0 = Nul, 1 = Victoire Domicile, 2 = Victoire Extérieur
+    Mise INTEGER NOT NULL DEFAULT 10 CHECK (Mise > 0),
+    Cote DECIMAL(5,2) NOT NULL DEFAULT 1.00,
+    Statut VARCHAR(20) NOT NULL DEFAULT 'EN_COURS', -- EN_COURS, GAGNE, PERDU
+    EstFootix BOOLEAN DEFAULT FALSE,
     DatePari TIMESTAMP DEFAULT NOW(),
-    
-    -- Clé primaire composite
+
     PRIMARY KEY (ID_User, ID_Match),
-    
-    -- Clés étrangères
+
     CONSTRAINT fk_pari_user FOREIGN KEY (ID_User) REFERENCES UTILISATEUR(ID_User) ON DELETE CASCADE,
     CONSTRAINT fk_pari_match FOREIGN KEY (ID_Match) REFERENCES MATCH(ID_Match) ON DELETE CASCADE,
-    
-    -- Contrainte métier: pronostic 1 ou 2 uniquement
-    CONSTRAINT check_pronostic_valid CHECK (Pronostic IN (1, 2))
+    CONSTRAINT check_pronostic_valid CHECK (Pronostic IN (0, 1, 2)),
+    CONSTRAINT check_statut_valid CHECK (Statut IN ('EN_COURS', 'GAGNE', 'PERDU'))
 );
 
 -- =====================================================
@@ -206,10 +204,10 @@ INSERT INTO EQUIPE (Nom, Pays, ID_API) VALUES
 
 -- Insertion d'un utilisateur test (mot de passe: "Test1234!")
 -- Hash bcrypt pour "Test1234!" : $2b$10$YourHashHere (à générer avec bcrypt)
-INSERT INTO UTILISATEUR (Nom, Email, MotDePasse) VALUES 
-    ('Jean Dupont', 'jean.dupont@test.fr', '$2b$10$rQj7fZQk9Y6nZ8xZ9Z8Z9u'),
-    ('Marie Martin', 'marie.martin@test.fr', '$2b$10$rQj7fZQk9Y6nZ8xZ9Z8Z9u'),
-    ('Ahmed Ben', 'ahmed.ben@test.fr', '$2b$10$rQj7fZQk9Y6nZ8xZ9Z8Z9u');
+INSERT INTO UTILISATEUR (Nom, Email, MotDePasse, Bankroll) VALUES
+    ('Jean Dupont', 'jean.dupont@test.fr', '$2b$10$rQj7fZQk9Y6nZ8xZ9Z8Z9u', 1000),
+    ('Marie Martin', 'marie.martin@test.fr', '$2b$10$rQj7fZQk9Y6nZ8xZ9Z8Z9u', 1000),
+    ('Ahmed Ben', 'ahmed.ben@test.fr', '$2b$10$rQj7fZQk9Y6nZ8xZ9Z8Z9u', 1000);
 
 -- Insertion de matchs à venir
 INSERT INTO MATCH (ID_Sport, ID_EquipeDomicile, ID_EquipeExterieur, DateHeure, ScoreFinal) VALUES 
@@ -227,10 +225,10 @@ INSERT INTO PREFERENCE (ID_User, ID_Equipe, ID_Sport) VALUES
     (3, 3, NULL); -- Ahmed suit le Barça (tous sports)
 
 -- Insertion de paris
-INSERT INTO PARII (ID_User, ID_Match, Pronostic, EstFootix) VALUES 
-    (1, 1, 1, FALSE), -- Jean parie PSG
-    (2, 1, 2, FALSE), -- Marie parie OM
-    (3, 2, 1, FALSE); -- Ahmed parie Barça
+INSERT INTO PARII (ID_User, ID_Match, Pronostic, Mise, Cote, Statut, EstFootix) VALUES
+    (1, 1, 1, 100, 1.85, 'EN_COURS', FALSE),
+    (2, 1, 2, 50,  2.10, 'EN_COURS', FALSE),
+    (3, 2, 1, 200, 1.60, 'EN_COURS', FALSE);
 
 -- Insertion d'assiduité
 INSERT INTO ASSIDUITE (ID_User, ID_Match, EstVu) VALUES 

@@ -9,16 +9,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const currentPage = window.location.pathname.split('/').pop();
 
     if (currentPage === 'log.html' || currentPage === '') {
-        // SI ON EST SUR LA PAGE LOGIN : et qu'on a déjà un token, on file sur main.html
         if (token && userName) {
             window.location.href = "main.html";
         }
-    } else if (currentPage === 'main.html') {
-        // SI ON EST SUR LE MAIN : et qu'on n'a PAS de token, on est renvoyé au login (Sécurité !)
+    } else if (currentPage === 'main.html' || currentPage === 'board.html' || currentPage === 'profile.html') {
         if (!token || !userName) {
             window.location.href = "log.html";
         } else {
-            // Si on est bien connecté, on affiche le nom dans la barre de navigation
             const userNameDisplay = document.getElementById('userNameDisplay');
             if (userNameDisplay) userNameDisplay.textContent = userName;
         }
@@ -99,9 +96,12 @@ async function login() {
 
         if (response.ok) {
             // SAUVEGARDE EN MÉMOIRE
-            localStorage.setItem('token', data.token); 
-            localStorage.setItem('userName', data.user.name); 
-            
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('userName', data.user.name);
+            if (data.bonusRecharge > 0) {
+                localStorage.setItem('bonusRecharge', data.bonusRecharge);
+            }
+
             // REDIRECTION VERS L'APPLICATION
             window.location.href = "main.html";
         } else {

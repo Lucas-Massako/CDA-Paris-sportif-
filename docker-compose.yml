@@ -6,7 +6,7 @@ services:
   # =====================================================
   db:
     image: postgres:15
-    container_name: footix_db
+    container_name: Footix-Claude-db
     restart: always
     environment:
       POSTGRES_USER: user_footix
@@ -16,6 +16,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./Backend/scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
     networks:
       - footix_network
 
@@ -24,13 +25,14 @@ services:
   # =====================================================
   api:
     build: ./Backend
-    container_name: footix_api
+    container_name: Footix-Claude-api
     restart: always
     ports:
       - "8000:8000"
     environment:
       DATABASE_URL: postgres://user_footix:password_footix@db:5432/footix_score
       NODE_ENV: development
+      JWT_SECRET: footix_jwt_secret_2026
     depends_on:
       - db
     networks:
@@ -41,7 +43,7 @@ services:
   # =====================================================
   pgadmin:
     image: dpage/pgadmin4:latest
-    container_name: footix_pgadmin
+    container_name: Footix-Claude-pgadmin
     restart: always
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@footix.com

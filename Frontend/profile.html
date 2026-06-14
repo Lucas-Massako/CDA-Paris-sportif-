@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Footix — Mon Profil</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); min-height: 100vh; }
+        .avatar-ring { box-shadow: 0 0 0 4px #6366f1, 0 0 0 6px white; }
+        .avatar-card { transition: transform .15s, box-shadow .15s; }
+        .avatar-card:hover:not(.locked) { transform: translateY(-3px); box-shadow: 0 8px 16px rgba(0,0,0,.12); }
+        input:focus, select:focus { outline: none; box-shadow: 0 0 0 3px rgba(99,102,241,.2); }
+    </style>
+    <script src="./auth.js"></script>
+</head>
+<body class="p-4 md:p-8">
+
+<div class="max-w-5xl mx-auto">
+
+    <!-- Header -->
+    <header class="bg-white rounded-2xl shadow-sm border border-gray-100 px-6 py-4 flex items-center justify-between mb-6">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black shadow-lg shadow-indigo-200">⚽</div>
+            <h1 class="text-xl font-bold text-gray-900">CDA Bet</h1>
+        </div>
+        <div class="flex items-center gap-3">
+            <button onclick="window.location.href='main.html'"
+                class="text-sm font-bold text-indigo-600 hover:bg-indigo-50 px-3 py-1.5 rounded-xl border border-indigo-100 transition">
+                🏠 Dashboard
+            </button>
+            <button onclick="window.location.href='board.html'"
+                class="text-sm font-bold text-gray-600 hover:bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-100 transition">
+                🏆 Leaderboard
+            </button>
+            <div class="bg-yellow-100 text-yellow-700 px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1">
+                🪙 <span id="bankrollDisplay">…</span> pts
+            </div>
+            <button onclick="logout()"
+                class="bg-red-50 text-red-600 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-xl text-xs font-bold transition">
+                Déconnexion
+            </button>
+        </div>
+    </header>
+
+    <!-- Hero profil -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mb-6 flex flex-col items-center gap-3">
+        <div id="hero-avatar"
+             class="w-24 h-24 rounded-full flex items-center justify-center text-5xl shadow-xl"
+             style="background: #6366f1">⚽</div>
+        <h2 id="hero-name" class="text-2xl font-black text-gray-900">…</h2>
+        <p id="hero-joined" class="text-xs text-gray-400"></p>
+        <div id="hero-team" class="hidden text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full"></div>
+    </div>
+
+    <!-- Corps principal -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        <!-- GAUCHE : Formulaire -->
+        <div class="flex flex-col gap-4">
+
+            <!-- Modifier le profil -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col gap-4">
+                <h3 class="font-black text-gray-900 text-base border-b border-gray-100 pb-3">✏️ Mon Profil</h3>
+
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-bold text-gray-500 uppercase tracking-wider">Pseudo</label>
+                    <input id="inputNom" type="text" placeholder="Ton pseudo"
+                        class="border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-semibold transition">
+                </div>
+
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-bold text-gray-500 uppercase tracking-wider">Email</label>
+                    <input id="inputEmail" type="text" readonly
+                        class="border border-gray-100 rounded-xl px-4 py-2.5 text-sm text-gray-400 bg-gray-50 cursor-not-allowed">
+                </div>
+
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-bold text-gray-500 uppercase tracking-wider">Championnat</label>
+                    <select id="inputLigue" onchange="filterClubs()"
+                        class="border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-semibold transition bg-white">
+                        <option value="">— Tous les championnats —</option>
+                        <option value="Ligue 1">🇫🇷 Ligue 1</option>
+                        <option value="Premier League">🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League</option>
+                        <option value="La Liga">🇪🇸 La Liga</option>
+                        <option value="Serie A">🇮🇹 Serie A</option>
+                        <option value="Bundesliga">🇩🇪 Bundesliga</option>
+                        <option value="International">🌍 Équipes Nationales</option>
+                    </select>
+                </div>
+
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-bold text-gray-500 uppercase tracking-wider">Club / Équipe favorite</label>
+                    <select id="inputEquipe"
+                        class="border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-semibold transition bg-white">
+                        <option value="">— Sélectionner un championnat d'abord —</option>
+                    </select>
+                </div>
+
+                <button onclick="saveProfile()"
+                    class="bg-indigo-600 hover:bg-indigo-700 text-white font-black py-2.5 rounded-xl transition text-sm mt-1">
+                    Enregistrer
+                </button>
+                <p id="profileMsg" class="text-xs text-center font-bold hidden"></p>
+            </div>
+
+            <!-- Changer le mot de passe -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col gap-4">
+                <h3 class="font-black text-gray-900 text-base border-b border-gray-100 pb-3">🔒 Mot de passe</h3>
+
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-bold text-gray-500 uppercase tracking-wider">Nouveau mot de passe</label>
+                    <input id="inputPwd1" type="password" placeholder="6 caractères minimum"
+                        class="border border-gray-200 rounded-xl px-4 py-2.5 text-sm transition">
+                </div>
+
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-bold text-gray-500 uppercase tracking-wider">Confirmer</label>
+                    <input id="inputPwd2" type="password" placeholder="Répéter le mot de passe"
+                        class="border border-gray-200 rounded-xl px-4 py-2.5 text-sm transition">
+                </div>
+
+                <button onclick="changePassword()"
+                    class="bg-gray-800 hover:bg-gray-900 text-white font-black py-2.5 rounded-xl transition text-sm">
+                    Mettre à jour
+                </button>
+                <p id="pwdMsg" class="text-xs text-center font-bold hidden"></p>
+            </div>
+        </div>
+
+        <!-- DROITE : Grille d'avatars -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <div class="flex items-center justify-between mb-5 border-b border-gray-100 pb-3">
+                <h3 class="font-black text-gray-900 text-base">🏅 Mes Badges</h3>
+                <span id="badge-count" class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full"></span>
+            </div>
+
+            <div id="avatar-grid" class="grid grid-cols-5 gap-3">
+                <!-- Généré par JS -->
+            </div>
+
+            <p class="text-[10px] text-gray-400 text-center mt-4">
+                Clique sur un badge débloqué pour l'équiper comme photo de profil.
+            </p>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    const API = "http://localhost:8000";
+    let profileData = null;
+    let allTeams = [];
+
+    // ─── CHARGEMENT DU PROFIL ───────────────────────────────────
+    async function loadProfile() {
+        const token = localStorage.getItem('token');
+        if (!token) { window.location.href = 'log.html'; return; }
+        try {
+            const res = await fetch(`${API}/api/users/profile/full`, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            // Token expiré ou invalide → renvoi au login
+            if (res.status === 401 || res.status === 403) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('userName');
+                window.location.href = 'log.html';
+                return;
+            }
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                showProfileError(err.message || `Erreur serveur (${res.status})`);
+                return;
+            }
+            profileData = await res.json();
+            renderProfile(profileData);
+        } catch (e) {
+            showProfileError("Impossible de joindre le serveur. Vérifiez que Docker est démarré.");
+        }
+    }
+
+    function showProfileError(msg) {
+        document.getElementById('hero-name').textContent = 'Erreur';
+        document.getElementById('hero-joined').textContent = msg;
+        document.getElementById('hero-joined').classList.add('text-red-500');
+    }
+
+    function renderProfile({ user, avatars, teams }) {
+        // Hero
+        document.getElementById('hero-avatar').textContent  = user.avatar.emoji;
+        document.getElementById('hero-avatar').style.background = user.avatar.couleur;
+        document.getElementById('hero-name').textContent    = user.name;
+        document.getElementById('bankrollDisplay').textContent = user.bankroll;
+        document.getElementById('userNameDisplay')?.setAttribute('textContent', user.name);
+
+        const d = new Date(user.joinDate);
+        document.getElementById('hero-joined').textContent  =
+            'Membre depuis le ' + d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+
+        if (user.equipe_favorite_nom) {
+            const heroTeam = document.getElementById('hero-team');
+            heroTeam.textContent = '❤️ ' + user.equipe_favorite_nom;
+            heroTeam.classList.remove('hidden');
+        }
+
+        // Form
+        document.getElementById('inputNom').value   = user.name;
+        document.getElementById('inputEmail').value = user.email;
+
+        // Équipes — stockage global + présélection du championnat
+        allTeams = teams;
+        if (user.id_equipe_favorite) {
+            const fav = teams.find(t => t.id_equipe === user.id_equipe_favorite);
+            if (fav) {
+                document.getElementById('inputLigue').value = fav.pays;
+                filterClubs(user.id_equipe_favorite);
+            }
+        }
+
+        // Grille avatars
+        renderAvatarGrid(avatars, user.avatar.id);
+    }
+
+    function renderAvatarGrid(avatars, activeId) {
+        const grid    = document.getElementById('avatar-grid');
+        const unlocked = avatars.filter(a => a.debloque).length;
+        document.getElementById('badge-count').textContent = `${unlocked} / ${avatars.length}`;
+        grid.innerHTML = '';
+
+        avatars.forEach(av => {
+            const isActive  = av.id_avatar === activeId || av.actif;
+            const isLocked  = !av.debloque;
+
+            const cell = document.createElement('div');
+            cell.className = `avatar-card flex flex-col items-center gap-1.5 p-2 rounded-xl cursor-pointer
+                ${isLocked  ? 'locked opacity-50 cursor-not-allowed' : 'hover:bg-indigo-50'}
+                ${isActive  ? 'bg-indigo-50 ring-2 ring-indigo-500' : ''}`;
+
+            cell.title = isLocked
+                ? `🔒 ${av.description}`
+                : (isActive ? '✅ Avatar actif' : `Cliquer pour équiper · ${av.description}`);
+
+            const circle = document.createElement('div');
+            circle.className = 'relative w-12 h-12 rounded-full flex items-center justify-center text-2xl flex-shrink-0';
+            circle.style.background = isLocked ? '#cbd5e1' : av.couleur;
+            circle.textContent = av.emoji;
+
+            if (isLocked) {
+                const lock = document.createElement('div');
+                lock.className = 'absolute inset-0 flex items-center justify-center bg-black/40 rounded-full text-sm';
+                lock.textContent = '🔒';
+                circle.appendChild(lock);
+            }
+
+            if (isActive) {
+                const badge = document.createElement('div');
+                badge.className = 'absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white';
+                circle.appendChild(badge);
+            }
+
+            const label = document.createElement('span');
+            label.className = `text-[9px] font-bold text-center leading-tight ${isLocked ? 'text-gray-400' : 'text-gray-700'}`;
+            label.textContent = av.nom;
+
+            cell.appendChild(circle);
+            cell.appendChild(label);
+
+            if (!isLocked && !isActive) {
+                cell.addEventListener('click', () => equipAvatar(av.id_avatar, av.emoji, av.couleur, av.nom));
+            }
+
+            grid.appendChild(cell);
+        });
+    }
+
+    // ─── FILTRE CLUBS PAR CHAMPIONNAT ──────────────────────────
+    function filterClubs(preselectId = null) {
+        const ligue = document.getElementById('inputLigue').value;
+        const sel   = document.getElementById('inputEquipe');
+        sel.innerHTML = '';
+
+        const filtered = ligue
+            ? allTeams.filter(t => t.pays === ligue)
+            : allTeams;
+
+        if (filtered.length === 0) {
+            sel.innerHTML = '<option value="">— Aucun club disponible —</option>';
+            return;
+        }
+
+        const placeholder = document.createElement('option');
+        placeholder.value       = '';
+        placeholder.textContent = ligue ? `— Choisir dans ${ligue} —` : '— Choisir un championnat d\'abord —';
+        sel.appendChild(placeholder);
+
+        filtered.forEach(t => {
+            const opt = document.createElement('option');
+            opt.value       = t.id_equipe;
+            opt.textContent = t.nom;
+            if (preselectId && t.id_equipe === preselectId) opt.selected = true;
+            sel.appendChild(opt);
+        });
+    }
+
+    // ─── ÉQUIPER UN AVATAR ──────────────────────────────────────
+    async function equipAvatar(id, emoji, couleur, nom) {
+        const token = localStorage.getItem('token');
+        try {
+            const res = await fetch(`${API}/api/users/profile`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ id_avatar_actif: id })
+            });
+            if (!res.ok) { alert("Erreur lors de l'équipement."); return; }
+
+            // Mise à jour UI immédiate
+            document.getElementById('hero-avatar').textContent = emoji;
+            document.getElementById('hero-avatar').style.background = couleur;
+            showToast(`Avatar "${nom}" équipé !`);
+
+            // Re-render la grille
+            if (profileData) {
+                profileData.user.avatar = { id, emoji, couleur, nom };
+                renderAvatarGrid(profileData.avatars, id);
+            }
+        } catch { alert("Erreur réseau."); }
+    }
+
+    // ─── ENREGISTRER LE PROFIL ──────────────────────────────────
+    async function saveProfile() {
+        const token     = localStorage.getItem('token');
+        const nom       = document.getElementById('inputNom').value.trim();
+        const equipeId  = document.getElementById('inputEquipe').value;
+
+        if (!nom) { showMsg('profileMsg', 'Le pseudo ne peut pas être vide.', 'red'); return; }
+
+        try {
+            const res = await fetch(`${API}/api/users/profile`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ nom, id_equipe_favorite: equipeId || null })
+            });
+            const data = await res.json();
+            if (!res.ok) { showMsg('profileMsg', data.message, 'red'); return; }
+
+            // Mise à jour locale
+            localStorage.setItem('userName', nom);
+            document.getElementById('hero-name').textContent = nom;
+            showMsg('profileMsg', data.message, 'green');
+        } catch { showMsg('profileMsg', 'Erreur réseau.', 'red'); }
+    }
+
+    // ─── CHANGER LE MOT DE PASSE ────────────────────────────────
+    async function changePassword() {
+        const token = localStorage.getItem('token');
+        const p1    = document.getElementById('inputPwd1').value;
+        const p2    = document.getElementById('inputPwd2').value;
+
+        if (p1.length < 6) { showMsg('pwdMsg', 'Minimum 6 caractères.', 'red'); return; }
+        if (p1 !== p2)     { showMsg('pwdMsg', 'Les mots de passe ne correspondent pas.', 'red'); return; }
+
+        try {
+            const res = await fetch(`${API}/api/users/profile`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ password: p1 })
+            });
+            const data = await res.json();
+            if (!res.ok) { showMsg('pwdMsg', data.message, 'red'); return; }
+
+            document.getElementById('inputPwd1').value = '';
+            document.getElementById('inputPwd2').value = '';
+            showMsg('pwdMsg', 'Mot de passe mis à jour !', 'green');
+        } catch { showMsg('pwdMsg', 'Erreur réseau.', 'red'); }
+    }
+
+    // ─── HELPERS ────────────────────────────────────────────────
+    function showMsg(id, text, color) {
+        const el = document.getElementById(id);
+        el.textContent = text;
+        el.className = `text-xs text-center font-bold text-${color}-600`;
+        el.classList.remove('hidden');
+        setTimeout(() => el.classList.add('hidden'), 4000);
+    }
+
+    function showToast(msg) {
+        const t = document.createElement('div');
+        t.textContent = msg;
+        t.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 bg-indigo-600 text-white font-bold px-6 py-3 rounded-2xl shadow-xl z-50 text-sm';
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 2500);
+    }
+
+    function logout() {
+        localStorage.removeItem('token');
+        localStorage.removeItem('userName');
+        window.location.href = 'log.html';
+    }
+
+    document.addEventListener('DOMContentLoaded', loadProfile);
+</script>
+</body>
+</html>

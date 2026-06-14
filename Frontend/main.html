@@ -27,11 +27,13 @@
             <div class="flex items-center gap-3">
                 <label for="league-select" class="text-xs font-bold text-gray-400 uppercase">Championnat :</label>
                 <select id="league-select" onchange="changeLeague()" class="bg-gray-50 border border-gray-200 text-gray-700 text-sm font-semibold rounded-xl px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer transition-all">
-                    <option value="4334">Ligue 1 (France)</option>
-                    <option value="4328">Premier League (UK)</option>
-                    <option value="4335">La Liga (Espagne)</option>
-                    <option value="4332">Serie A (Italie)</option>
-                    <option value="4331">Bundesliga (Allemagne)</option>
+                    <option value="wc2026" selected>🌍 Coupe du Monde 2026</option>
+                    <option value="4480">🏆 Ligue des Champions</option>
+                    <option value="4334">🇫🇷 Ligue 1</option>
+                    <option value="4328">🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League</option>
+                    <option value="4335">🇪🇸 La Liga</option>
+                    <option value="4332">🇮🇹 Serie A</option>
+                    <option value="4331">🇩🇪 Bundesliga</option>
                 </select>
             </div>
 
@@ -39,13 +41,20 @@
                 <button onclick="window.location.href='board.html'" class="text-indigo-600 hover:bg-indigo-100 bg-white shadow-sm font-bold text-sm px-3 py-1.5 rounded-lg border border-indigo-100 flex items-center gap-2 transition">
                     🏆 Leaderboard
                 </button>
+                <button id="adminBtn" onclick="window.location.href='admin.html'"
+                    class="hidden bg-red-50 text-red-600 hover:bg-red-600 hover:text-white font-bold text-sm px-3 py-1.5 rounded-lg border border-red-200 flex items-center gap-1 transition">
+                    ⚙️ Admin
+                </button>
 
                 <div class="bg-yellow-100 text-yellow-700 px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1 shadow-sm">
                     🪙 <span id="pointsDisplay">1000</span> pts
                 </div>
 
                 <div class="flex items-center gap-2 px-2 border-l border-gray-200">
-                    <div class="w-7 h-7 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 text-xs font-bold">👤</div>
+                    <a href="profile.html" title="Mon profil"
+                       id="navAvatarDisplay"
+                       class="w-7 h-7 rounded-full flex items-center justify-center text-base cursor-pointer hover:scale-110 transition-transform"
+                       style="background: #6366f1">⚽</a>
                     <span id="userNameDisplay" class="text-sm font-bold text-gray-800">...</span>
                 </div>
                 <button onclick="logout()" class="bg-red-50 text-red-600 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-xl text-xs font-bold transition">
@@ -73,12 +82,12 @@
 
             <div class="lg:col-span-4 flex flex-col gap-6">
                 
-                <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm sticky top-24">
-                    <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2 border-b border-gray-100 pb-3">
+                <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm sticky top-24 max-h-[420px] flex flex-col">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2 border-b border-gray-100 pb-3 shrink-0">
                         📝 Mes Pronostics
                     </h3>
-                    <div id="bet-slip-empty" class="text-center py-4">
-                        <p class="text-xs text-gray-400 italic">Cliquez sur une cote pour ajouter un pronostic.</p>
+                    <div id="bet-list" class="flex flex-col gap-2 overflow-y-auto custom-scrollbar">
+                        <p class="text-xs text-gray-400 italic text-center py-4">Chargement...</p>
                     </div>
                 </div>
 
@@ -107,10 +116,234 @@
         </main>
     </div>
 
+    <!-- Modal Pari -->
+    <div id="bet-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4">
+            <div class="flex items-center justify-between">
+                <h3 class="font-black text-gray-900 text-lg">Placer un pari</h3>
+                <button onclick="closeBetModal()" class="text-gray-400 hover:text-gray-700 text-2xl font-bold leading-none">&times;</button>
+            </div>
+            <div class="bg-gray-50 rounded-xl p-3 flex flex-col gap-1">
+                <span id="modal-match" class="text-sm font-bold text-gray-800"></span>
+                <div class="flex items-center gap-2">
+                    <span id="modal-pronostic-label" class="text-xs bg-indigo-100 text-indigo-700 font-black px-2 py-0.5 rounded"></span>
+                    <span id="modal-cote" class="text-xs text-gray-500 font-bold"></span>
+                </div>
+            </div>
+            <div class="flex flex-col gap-1">
+                <label class="text-xs font-bold text-gray-500 uppercase tracking-wider">Mise (points)</label>
+                <input id="modal-mise" type="number" min="1" placeholder="ex: 100"
+                    class="border border-gray-200 rounded-xl px-4 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full"/>
+                <span id="modal-gain-preview" class="text-xs text-green-600 font-bold mt-1"></span>
+            </div>
+            <button onclick="confirmBet()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-black py-3 rounded-xl transition text-sm">
+                Confirmer le pari
+            </button>
+            <p id="modal-error" class="text-red-500 text-xs text-center font-bold hidden"></p>
+        </div>
+    </div>
+
     <script>
         const API_BASE = "https://www.thesportsdb.com/api/v1/json/123";
+        const BACKEND = "http://localhost:8000";
 
+        // --- BANKROLL ---
+        async function loadBankroll() {
+            const token = localStorage.getItem('token');
+            try {
+                const res = await fetch(`${BACKEND}/api/users/profile`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (res.status === 401 || res.status === 403) {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('userName');
+                    window.location.href = 'log.html';
+                    return;
+                }
+                if (!res.ok) return;
+                const data = await res.json();
+                document.getElementById('pointsDisplay').textContent = data.bankroll;
+                const navAvatar = document.getElementById('navAvatarDisplay');
+                if (navAvatar && data.avatar) {
+                    navAvatar.textContent = data.avatar.emoji;
+                    navAvatar.style.background = data.avatar.couleur;
+                }
+                // Afficher bouton admin si l'utilisateur est admin
+                if (data.is_admin) {
+                    const adminBtn = document.getElementById('adminBtn');
+                    if (adminBtn) adminBtn.classList.remove('hidden');
+                }
+            } catch (e) { /* serveur pas encore démarré */ }
+        }
+
+        // --- BET MODAL ---
+        let pendingBet = null;
+
+        function openBetModal(event, pronosticLabel, pronosticValue, cote) {
+            pendingBet = {
+                event_id: event.idEvent,
+                home_team: event.strHomeTeam,
+                away_team: event.strAwayTeam,
+                date: event.dateEvent,
+                pronostic: pronosticValue,
+                cote: parseFloat(cote)
+            };
+            document.getElementById('modal-match').textContent = `${event.strHomeTeam} vs ${event.strAwayTeam}`;
+            document.getElementById('modal-pronostic-label').textContent = pronosticLabel;
+            document.getElementById('modal-cote').textContent = `Cote : ${cote}`;
+            document.getElementById('modal-mise').value = '';
+            document.getElementById('modal-gain-preview').textContent = '';
+            document.getElementById('modal-error').classList.add('hidden');
+            document.getElementById('bet-modal').classList.remove('hidden');
+            document.getElementById('modal-mise').focus();
+        }
+
+        function closeBetModal() {
+            document.getElementById('bet-modal').classList.add('hidden');
+            pendingBet = null;
+        }
+
+        document.getElementById('modal-mise').addEventListener('input', () => {
+            const mise = parseFloat(document.getElementById('modal-mise').value);
+            const gain = pendingBet ? (mise * pendingBet.cote).toFixed(2) : 0;
+            document.getElementById('modal-gain-preview').textContent =
+                mise > 0 ? `Gain potentiel : ${gain} pts` : '';
+        });
+
+        async function confirmBet() {
+            if (!pendingBet) return;
+            const mise = parseInt(document.getElementById('modal-mise').value);
+            if (!mise || mise <= 0) {
+                showModalError("Entrez une mise valide.");
+                return;
+            }
+
+            const token = localStorage.getItem('token');
+            try {
+                const res = await fetch(`${BACKEND}/api/bets/place`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ ...pendingBet, mise })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    showModalError(data.message || "Erreur lors du pari.");
+                    return;
+                }
+                document.getElementById('pointsDisplay').textContent = data.newBankroll;
+                closeBetModal();
+                showToast("Pari enregistré !");
+                loadBetHistory();
+            } catch (e) {
+                showModalError("Impossible de contacter le serveur.");
+            }
+        }
+
+        function showModalError(msg) {
+            const el = document.getElementById('modal-error');
+            el.textContent = msg;
+            el.classList.remove('hidden');
+        }
+
+        function showToast(msg) {
+            const toast = document.createElement('div');
+            toast.textContent = msg;
+            toast.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 bg-green-500 text-white font-bold px-6 py-3 rounded-2xl shadow-xl z-50 text-sm';
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2500);
+        }
+
+        // --- WORLD CUP : charge depuis notre backend ---
+        async function fetchWorldCupMatches() {
+            const token = localStorage.getItem('token');
+            document.getElementById('league-subtitle').textContent = 'Misez vos points sur la Coupe du Monde 2026';
+            document.getElementById('side-ranking-name').textContent = 'Coupe du Monde';
+            document.getElementById('container-past').innerHTML = '';
+            document.getElementById('ranking-body-side').innerHTML =
+                '<tr><td colspan="3" class="p-4 text-center text-xs text-gray-400 italic">Classement non disponible en phase de groupes</td></tr>';
+
+            try {
+                const res = await fetch(`${BACKEND}/api/matches`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (!res.ok) throw new Error('API non disponible');
+                const matches = await res.json();
+                renderNextFromDB(matches);
+            } catch (err) {
+                document.getElementById('container-next').innerHTML =
+                    '<div class="bg-red-50 p-6 rounded-2xl text-center text-red-400 border border-dashed border-red-200 text-xs italic">Impossible de charger les matchs. Le serveur est-il démarré ?</div>';
+            }
+        }
+
+        function renderNextFromDB(matches) {
+            const container = document.getElementById('container-next');
+            container.innerHTML = '';
+
+            const upcoming = matches.filter(m => !m.scorefinal);
+
+            if (upcoming.length === 0) {
+                container.innerHTML = '<div class="bg-gray-50 p-6 rounded-2xl text-center border border-dashed border-gray-200 text-xs text-gray-400 italic">Aucun match à venir.</div>';
+                return;
+            }
+
+            upcoming.forEach(match => {
+                const cote1 = (Math.random() * (2.5 - 1.1) + 1.1).toFixed(2);
+                const coteN = (Math.random() * (4.5 - 2.5) + 2.5).toFixed(2);
+                const cote2 = (Math.random() * (3.5 - 1.5) + 1.5).toFixed(2);
+
+                const dateObj = new Date(match.dateheure);
+                const dateStr = dateObj.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'long' });
+                const heureStr = dateObj.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+
+                const cotes = [
+                    { label: '1', value: 1, cote: cote1 },
+                    { label: 'N', value: 0, cote: coteN },
+                    { label: '2', value: 2, cote: cote2 }
+                ];
+
+                // Adapter au format attendu par openBetModal
+                const eventObj = {
+                    idEvent:     match.id_external || String(match.id_match),
+                    strHomeTeam: match.equipe_domicile,
+                    strAwayTeam: match.equipe_exterieur,
+                    dateEvent:   dateStr
+                };
+
+                const card = document.createElement('div');
+                card.className = 'bg-white border border-gray-200 p-4 rounded-xl flex flex-col md:flex-row items-center justify-between shadow-sm hover:border-indigo-200 transition-all';
+                card.innerHTML = `
+                    <div class="flex flex-col gap-1 flex-1">
+                        <span class="text-[9px] font-bold text-indigo-500 uppercase tracking-widest">${dateStr} · ${heureStr}</span>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span class="font-bold text-gray-800 text-sm">${match.equipe_domicile}</span>
+                            <span class="text-gray-300 font-black text-[10px]">VS</span>
+                            <span class="font-bold text-gray-800 text-sm">${match.equipe_exterieur}</span>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 mt-3 md:mt-0" id="cotes-db-${match.id_match}"></div>
+                `;
+                container.appendChild(card);
+
+                const cotesContainer = card.querySelector(`#cotes-db-${match.id_match}`);
+                cotes.forEach(item => {
+                    const btn = document.createElement('button');
+                    btn.className = 'cote-btn bg-gray-50 border border-gray-100 hover:bg-indigo-600 hover:text-white px-4 py-2 rounded-lg transition-all flex flex-col items-center min-w-[55px]';
+                    btn.innerHTML = `<span class="text-[8px] uppercase font-bold opacity-60">${item.label}</span><span class="text-xs font-black">${item.cote}</span>`;
+                    btn.addEventListener('click', () => openBetModal(eventObj, item.label, item.value, item.cote));
+                    cotesContainer.appendChild(btn);
+                });
+            });
+        }
+
+        // --- LEAGUE DATA (TheSportsDB pour les championnats) ---
         async function fetchLeagueData(leagueId) {
+            if (leagueId === 'wc2026') {
+                return fetchWorldCupMatches();
+            }
+
             const select = document.getElementById('league-select');
             const leagueName = select.options[select.selectedIndex].text;
             document.getElementById('league-subtitle').textContent = `Misez vos points sur la ${leagueName}`;
@@ -120,7 +353,7 @@
                 const [nextResp, pastResp, rankResp] = await Promise.all([
                     fetch(`${API_BASE}/eventsnextleague.php?id=${leagueId}`),
                     fetch(`${API_BASE}/eventspastleague.php?id=${leagueId}`),
-                    fetch(`${API_BASE}/lookuptable.php?l=${leagueId}&s=2023-2024`) 
+                    fetch(`${API_BASE}/lookuptable.php?l=${leagueId}&s=2023-2024`)
                 ]);
 
                 const nextData = await nextResp.json();
@@ -131,19 +364,17 @@
                 renderPast(pastData.events || []);
                 renderSideRanking(rankData.table || []);
             } catch (error) {
-                console.error("Erreur API:", error);
+                console.error("Erreur API TheSportsDB:", error);
             }
         }
 
         function renderSideRanking(table) {
             const container = document.getElementById('ranking-body-side');
             container.innerHTML = '';
-            
             if (table.length === 0) {
                 container.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-xs text-gray-400 italic">Non disponible</td></tr>';
                 return;
             }
-
             table.forEach(team => {
                 container.innerHTML += `
                 <tr class="hover:bg-indigo-50/30 transition">
@@ -159,20 +390,27 @@
 
         function renderNext(events) {
             const container = document.getElementById('container-next');
-            container.innerHTML = ''; 
+            container.innerHTML = '';
 
             if (events.length === 0) {
-                container.innerHTML = '<div class="bg-gray-50 p-6 rounded-2xl text-center text-gray-500 font-medium border border-dashed border-gray-200 text-xs text-gray-400 italic">Aucun match programmé pour le moment.</div>';
+                container.innerHTML = '<div class="bg-gray-50 p-6 rounded-2xl text-center border border-dashed border-gray-200 text-xs text-gray-400 italic">Aucun match programmé pour le moment.</div>';
                 return;
             }
 
-            events.slice(0, 5).forEach(event => {
+            events.forEach(event => {
                 const cote1 = (Math.random() * (2.5 - 1.1) + 1.1).toFixed(2);
                 const coteN = (Math.random() * (4.5 - 2.5) + 2.5).toFixed(2);
                 const cote2 = (Math.random() * (3.5 - 1.5) + 1.5).toFixed(2);
 
-                container.innerHTML += `
-                <div class="bg-white border border-gray-200 p-4 rounded-xl flex flex-col md:flex-row items-center justify-between shadow-sm hover:border-indigo-200 transition-all">
+                const cotes = [
+                    { label: '1', value: 1, cote: cote1 },
+                    { label: 'N', value: 0, cote: coteN },
+                    { label: '2', value: 2, cote: cote2 }
+                ];
+
+                const card = document.createElement('div');
+                card.className = 'bg-white border border-gray-200 p-4 rounded-xl flex flex-col md:flex-row items-center justify-between shadow-sm hover:border-indigo-200 transition-all';
+                card.innerHTML = `
                     <div class="flex flex-col gap-1 flex-1">
                         <span class="text-[9px] font-bold text-indigo-500 uppercase tracking-widest">${event.dateEvent}</span>
                         <div class="flex items-center gap-2 mt-1">
@@ -181,30 +419,36 @@
                             <span class="font-bold text-gray-800 text-sm truncate">${event.strAwayTeam}</span>
                         </div>
                     </div>
-                    <div class="flex gap-2 mt-3 md:mt-0">
-                        ${[
-                            {label: '1', cote: cote1},
-                            {label: 'N', cote: coteN},
-                            {label: '2', cote: cote2}
-                        ].map((item) => `
-                            <button class="cote-btn bg-gray-50 border border-gray-100 hover:bg-indigo-600 hover:text-white px-4 py-2 rounded-lg transition-all flex flex-col items-center min-w-[55px]">
-                                <span class="text-[8px] uppercase font-bold opacity-60">${item.label}</span>
-                                <span class="text-xs font-black">${item.cote}</span>
-                            </button>
-                        `).join('')}
-                    </div>
-                </div>`;
+                    <div class="flex gap-2 mt-3 md:mt-0" id="cotes-${event.idEvent}"></div>
+                `;
+                container.appendChild(card);
+
+                const cotesContainer = card.querySelector(`#cotes-${event.idEvent}`);
+                cotes.forEach(item => {
+                    const btn = document.createElement('button');
+                    btn.className = 'cote-btn bg-gray-50 border border-gray-100 hover:bg-indigo-600 hover:text-white px-4 py-2 rounded-lg transition-all flex flex-col items-center min-w-[55px]';
+                    btn.innerHTML = `<span class="text-[8px] uppercase font-bold opacity-60">${item.label}</span><span class="text-xs font-black">${item.cote}</span>`;
+                    btn.addEventListener('click', () => openBetModal(event, item.label, item.value, item.cote));
+                    cotesContainer.appendChild(btn);
+                });
             });
         }
 
         function renderPast(events) {
             const container = document.getElementById('container-past');
             container.innerHTML = '';
-            events.slice(0, 6).forEach(event => {
+            if (events.length === 0) {
+                container.innerHTML = '<div class="col-span-2 p-4 text-center text-xs text-gray-400 italic">Aucun résultat récent.</div>';
+                return;
+            }
+            events.slice(0, 8).forEach(event => {
                 container.innerHTML += `
                 <div class="bg-white border border-gray-100 p-3 rounded-xl flex justify-between items-center shadow-sm">
                     <span class="text-[10px] font-bold text-gray-600 truncate flex-1 text-right pr-2">${event.strHomeTeam}</span>
-                    <div class="bg-gray-100 text-indigo-600 border border-gray-200 px-2 py-0.5 rounded font-black text-[10px]">${event.intHomeScore} - ${event.intAwayScore}</div>
+                    <div class="flex flex-col items-center gap-0.5">
+                        <div class="bg-gray-100 text-indigo-600 border border-gray-200 px-2 py-0.5 rounded font-black text-[10px]">${event.intHomeScore} - ${event.intAwayScore}</div>
+                        <span class="text-[8px] text-gray-400">${event.dateEvent || ''}</span>
+                    </div>
                     <span class="text-[10px] font-bold text-gray-600 truncate flex-1 text-left pl-2">${event.strAwayTeam}</span>
                 </div>`;
             });
@@ -215,7 +459,70 @@
             fetchLeagueData(select.value);
         }
 
-        fetchLeagueData("4334");
+        // --- HISTORIQUE DES PARIS ---
+        async function loadBetHistory() {
+            const token = localStorage.getItem('token');
+            const container = document.getElementById('bet-list');
+            try {
+                const res = await fetch(`${BACKEND}/api/bets/history`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (!res.ok) throw new Error();
+                const bets = await res.json();
+                renderBetHistory(bets);
+            } catch {
+                container.innerHTML = '<p class="text-xs text-gray-400 italic text-center py-4">Impossible de charger les paris.</p>';
+            }
+        }
+
+        function renderBetHistory(bets) {
+            const container = document.getElementById('bet-list');
+            if (bets.length === 0) {
+                container.innerHTML = '<p class="text-xs text-gray-400 italic text-center py-4">Aucun pari placé pour l\'instant.</p>';
+                return;
+            }
+            const pronosticLabel = { 1: '1', 0: 'N', 2: '2' };
+            const statutStyle = {
+                'EN_COURS': 'bg-yellow-100 text-yellow-700',
+                'GAGNE':    'bg-green-100 text-green-700',
+                'PERDU':    'bg-red-100 text-red-600'
+            };
+            container.innerHTML = bets.map(b => {
+                const style = statutStyle[b.statut] || statutStyle['EN_COURS'];
+                const gainPotentiel = (b.mise * b.cote).toFixed(0);
+                return `
+                <div class="bg-gray-50 border border-gray-100 rounded-xl p-3 flex flex-col gap-1.5">
+                    <div class="flex items-center justify-between gap-1">
+                        <span class="text-[10px] font-bold text-gray-700 truncate flex-1">${b.equipe_domicile} vs ${b.equipe_exterieur}</span>
+                        <span class="text-[9px] font-black px-1.5 py-0.5 rounded ${style} shrink-0">${b.statut}</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-[10px] text-gray-500 font-bold">
+                        <span class="bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded font-black">${pronosticLabel[b.pronostic]}</span>
+                        <span>Mise : <strong>${b.mise} pts</strong></span>
+                        <span>·</span>
+                        <span>Cote : <strong>${parseFloat(b.cote).toFixed(2)}</strong></span>
+                        <span>·</span>
+                        <span class="text-green-600">+${gainPotentiel} pts</span>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        // Fermer le modal si on clique en dehors
+        document.getElementById('bet-modal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('bet-modal')) closeBetModal();
+        });
+
+        // Toast recharge automatique si bonus reçu à la connexion
+        const bonus = localStorage.getItem('bonusRecharge');
+        if (bonus) {
+            localStorage.removeItem('bonusRecharge');
+            setTimeout(() => showToast(`🎁 Bankroll rechargée ! +${bonus} pts offerts`), 800);
+        }
+
+        loadBankroll();
+        loadBetHistory();
+        fetchLeagueData("wc2026");
     </script>
 </body>
 </html>
