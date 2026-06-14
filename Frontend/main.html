@@ -261,25 +261,86 @@
             setTimeout(() => toast.remove(), 2500);
         }
 
-        // --- WORLD CUP : charge depuis notre backend ---
+        // --- WORLD CUP 2026 : données réelles depuis TheSportsDB ---
         async function fetchWorldCupMatches() {
             const token = localStorage.getItem('token');
-            document.getElementById('league-subtitle').textContent = 'Misez vos points sur la Coupe du Monde 2026';
-            document.getElementById('side-ranking-name').textContent = 'Coupe du Monde';
+            document.getElementById('league-subtitle').textContent = 'Misez vos points sur la Coupe du Monde FIFA 2026';
+            document.getElementById('side-ranking-name').textContent = 'Coupe du Monde 2026';
             document.getElementById('container-past').innerHTML = '';
             document.getElementById('ranking-body-side').innerHTML =
-                '<tr><td colspan="3" class="p-4 text-center text-xs text-gray-400 italic">Classement non disponible en phase de groupes</td></tr>';
+                '<tr><td colspan="3" class="p-4 text-center text-xs text-gray-400 italic">Format tournoi — groupes</td></tr>';
+            document.getElementById('container-next').innerHTML =
+                '<div class="text-center py-8 text-indigo-400 text-sm animate-pulse">Chargement des matchs WC 2026...</div>';
 
             try {
-                const res = await fetch(`${BACKEND}/api/matches`, {
-                    headers: { 'Authorization': 'Bearer ' + token }
-                });
-                if (!res.ok) throw new Error('API non disponible');
-                const matches = await res.json();
-                renderNextFromDB(matches);
+                // 1. Trouver l'ID du tournoi FIFA World Cup sur TheSportsDB
+                const searchRes  = await fetch(`${API_BASE}/searchleagues.php?t=FIFA+World+Cup`);
+                const searchData = await searchRes.json();
+                const wcLeague   = (searchData.countrys || []).find(l =>
+                    l.strSport === 'Soccer' &&
+                    l.strLeague.toLowerCase().includes('world cup') &&
+                    !l.strLeague.toLowerCase().includes('women') &&
+                    !l.strLeague.toLowerCase().includes('u-') &&
+                    !l.strLeague.toLowerCase().includes('under')
+                );
+                if (!wcLeague) throw new Error('FIFA World Cup non trouvé');
+                const wcId = wcLeague.idLeague;
+
+                // 2. Matchs à venir + résultats récents en parallèle
+                const [nextRes, pastRes] = await Promise.all([
+                    fetch(`${API_BASE}/eventsnextleague.php?id=${wcId}`),
+                    fetch(`${API_BASE}/eventspastleague.php?id=${wcId}`)
+                ]);
+                const nextData = await nextRes.json();
+                const pastData = await pastRes.json();
+                let events = nextData.events || [];
+
+                // 3. Fallback saison complète si moins de 5 matchs
+                if (events.length < 5) {
+                    try {
+                        const sRes  = await fetch(`${API_BASE}/eventsseason.php?id=${wcId}&s=2026`);
+                        const sData = await sRes.json();
+                        if (sData.events) {
+                            const today = new Date();
+                            const upcoming = sData.events
+                                .filter(e => e.dateEvent && new Date(e.dateEvent) > today && !e.intHomeScore)
+                                .sort((a, b) => new Date(a.dateEvent) - new Date(b.dateEvent))
+                                .slice(0, 10);
+                            const seen = new Set(events.map(e => e.idEvent));
+                            events = [...events, ...upcoming.filter(e => !seen.has(e.idEvent))].slice(0, 10);
+                        }
+                    } catch (_) {}
+                }
+
+                // 4. Cotes persistées via notre backend
+                let cotesMap = {};
+                if (events.length > 0) {
+                    try {
+                        const cotesRes = await fetch(`${BACKEND}/api/matches/external-cotes`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                            body: JSON.stringify({ ids: events.map(e => e.idEvent) })
+                        });
+                        if (cotesRes.ok) cotesMap = await cotesRes.json();
+                    } catch (_) {}
+                }
+
+                renderNext(events, cotesMap);
+                renderPast(pastData.events || []);
+
             } catch (err) {
-                document.getElementById('container-next').innerHTML =
-                    '<div class="bg-red-50 p-6 rounded-2xl text-center text-red-400 border border-dashed border-red-200 text-xs italic">Impossible de charger les matchs. Le serveur est-il démarré ?</div>';
+                // Fallback : base de données interne si TheSportsDB indisponible
+                console.warn('WC2026 TheSportsDB fallback → DB interne:', err.message);
+                try {
+                    const res = await fetch(`${BACKEND}/api/matches`, {
+                        headers: { 'Authorization': 'Bearer ' + token }
+                    });
+                    if (!res.ok) throw new Error();
+                    renderNextFromDB(await res.json());
+                } catch {
+                    document.getElementById('container-next').innerHTML =
+                        '<div class="bg-red-50 p-6 rounded-2xl text-center text-red-400 border border-dashed border-red-200 text-xs italic">Impossible de charger les matchs WC 2026.</div>';
+                }
             }
         }
 
