@@ -1,0 +1,24 @@
+{
+  "name": "projet-cda-copie",
+  "version": "1.0.0",
+  "description": "CDA Bet est une application Fullstack de pronostics sportifs entre amis (sans argent réel, basée sur un système de points), développée dans le cadre de la validation du titre **Concepteur Développeur d'Applications (CDA)**.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Lucas-Massako/CDA-Paris-sportif-.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Lucas-Massako/CDA-Paris-sportif-/issues"
+  },
+  "homepage": "https://github.com/Lucas-Massako/CDA-Paris-sportif-#readme",
+  "dependencies": {
+    "pptxgenjs": "^4.0.1"
+  }
+}
