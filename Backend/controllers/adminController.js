@@ -165,8 +165,10 @@ async function autoResolve(req, res) {
                 const data = await fetchJSON(`${TSDB}/lookupevent.php?id=${match.id_external}`);
                 const event = data.events?.[0];
 
-                if (!event || event.strStatus !== 'Match Finished' ||
-                    event.intHomeScore === null || event.intAwayScore === null) {
+                // TheSportsDB renvoie 'FT', 'AET', 'PEN' ou 'Match Finished' selon les matchs
+                const FINISHED_STATUSES = ['Match Finished', 'FT', 'AET', 'PEN'];
+                if (!event || !FINISHED_STATUSES.includes(event.strStatus) ||
+                    event.intHomeScore == null || event.intAwayScore == null) {
                     skipped++;
                     details.push({ match: `${match.domicile} vs ${match.exterieur}`, status: 'skip', reason: 'Score non disponible' });
                     continue;
@@ -219,4 +221,25 @@ async function autoResolve(req, res) {
     }
 }
 
-module.exports = { getMatches, resolveMatch, autoResolve };
+// DELETE /api/admin/matches/cleanup — supprimer les matchs passés sans aucun pari
+async function cleanupMatches(req, res) {
+    try {
+        const result = await pool.query(`
+            DELETE FROM match m
+            WHERE m.dateheure < NOW()
+              AND NOT EXISTS (SELECT 1 FROM parii p WHERE p.id_match = m.id_match)
+            RETURNING m.id_match
+        `);
+        res.json({
+            message: result.rowCount > 0
+                ? `${result.rowCount} match(s) passé(s) sans pari supprimé(s).`
+                : "Aucun match passé sans pari à supprimer.",
+            deleted: result.rowCount
+        });
+    } catch (err) {
+        console.error("Erreur cleanup matchs:", err.message);
+        res.status(500).json({ message: "Erreur serveur lors du nettoyage." });
+    }
+}
+
+module.exports = { getMatches, resolveMatch, autoResolve, cleanupMatches };

@@ -1,6 +1,15 @@
 const pool = require('../config/db');
 const { checkAndUnlockAvatars } = require('../utils/avatarUnlock');
 
+// Nom d'équipe : lettres (accents inclus), chiffres, espaces et ponctuation usuelle — pas de HTML
+const TEAM_NAME_REGEX = /^[\p{L}\p{N} .,'’\-()&/]+$/u;
+function isValidTeamName(name) {
+    return typeof name === 'string'
+        && name.trim().length > 0
+        && name.trim().length <= 100
+        && TEAM_NAME_REGEX.test(name.trim());
+}
+
 // Find or create a team by name, return its id_equipe
 async function findOrCreateTeam(client, name) {
     const existing = await client.query(
@@ -44,6 +53,9 @@ async function placeBet(req, res) {
     if (!event_id || pronostic === undefined || !mise) {
         return res.status(400).json({ message: "Données manquantes (event_id, pronostic, mise)" });
     }
+    if (!isValidTeamName(home_team) || !isValidTeamName(away_team)) {
+        return res.status(400).json({ message: "Nom d'équipe invalide (100 caractères max, lettres/chiffres/ponctuation simple)" });
+    }
     if (![0, 1, 2].includes(Number(pronostic))) {
         return res.status(400).json({ message: "Pronostic invalide (0=Nul, 1=Domicile, 2=Extérieur)" });
     }
@@ -71,7 +83,12 @@ async function placeBet(req, res) {
             return res.status(400).json({ message: `Solde insuffisant (${bankroll} pts disponibles)` });
         }
 
-        const matchId = await findOrCreateMatch(client, { event_id, home_team, away_team, date });
+        const matchId = await findOrCreateMatch(client, {
+            event_id,
+            home_team: home_team.trim(),
+            away_team: away_team.trim(),
+            date
+        });
 
         // Check for duplicate bet
         const dupCheck = await client.query(

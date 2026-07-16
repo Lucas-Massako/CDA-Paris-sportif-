@@ -55,6 +55,11 @@
                     data-i18n="admin.sync">
                     🔄 Sync TheSportsDB
                 </button>
+                <button onclick="cleanupMatches()" id="btn-cleanup"
+                    class="bg-red-500 hover:bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition flex items-center gap-1"
+                    data-i18n="admin.cleanup">
+                    🗑️ Nettoyer sans pari
+                </button>
             </div>
         </div>
 
@@ -112,6 +117,15 @@
     let allMatches = [];
     let currentFilter = 'all';
     let pendingResolve = null;
+
+    function escapeHtml(str) {
+        return String(str ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
 
     // ── Chargement ───────────────────────────────────────────────
     async function loadMatches() {
@@ -184,11 +198,11 @@
                 <div class="flex flex-col gap-1 flex-1 min-w-0">
                     <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">${dateStr} · ${heureStr}</span>
                     <div class="flex items-center gap-2 flex-wrap">
-                        <span class="font-black text-gray-900 text-sm truncate">${m.equipe_domicile}</span>
+                        <span class="font-black text-gray-900 text-sm truncate">${escapeHtml(m.equipe_domicile)}</span>
                         <span class="text-gray-300 font-black text-xs">VS</span>
-                        <span class="font-black text-gray-900 text-sm truncate">${m.equipe_exterieur}</span>
+                        <span class="font-black text-gray-900 text-sm truncate">${escapeHtml(m.equipe_exterieur)}</span>
                         ${resolved
-                            ? `<span class="bg-green-100 text-green-700 font-black text-xs px-2 py-0.5 rounded-full">FT ${m.scorefinal}</span>`
+                            ? `<span class="bg-green-100 text-green-700 font-black text-xs px-2 py-0.5 rounded-full">FT ${escapeHtml(m.scorefinal)}</span>`
                             : `<span class="bg-yellow-100 text-yellow-700 font-bold text-xs px-2 py-0.5 rounded-full">À jouer</span>`}
                     </div>
                 </div>
@@ -202,7 +216,7 @@
                     </div>` : `<span class="text-xs text-gray-400 italic">Aucun pari</span>`}
 
                     ${!resolved
-                        ? `<button onclick="openModal(${m.id_match}, '${m.equipe_domicile.replace(/'/g,"\\'")}', '${m.equipe_exterieur.replace(/'/g,"\\'")}', ${enCours})"
+                        ? `<button onclick="openModalById(${parseInt(m.id_match)}, ${enCours})"
                                 class="bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs px-4 py-2 rounded-xl transition whitespace-nowrap">
                                 ⚽ Entrer le score
                            </button>`
@@ -221,6 +235,13 @@
     }
 
     // ── Modal ────────────────────────────────────────────────────
+    // Les noms d'équipes sont relus depuis allMatches pour ne jamais transiter par du HTML inline
+    function openModalById(matchId, enCours) {
+        const m = allMatches.find(x => parseInt(x.id_match) === matchId);
+        if (!m) return;
+        openModal(matchId, m.equipe_domicile, m.equipe_exterieur, enCours);
+    }
+
     function openModal(matchId, home, away, enCours) {
         pendingResolve = { matchId, home, away };
         document.getElementById('modal-match-name').textContent = `${home}  vs  ${away}`;
@@ -319,6 +340,40 @@
             showToast('❌ Erreur réseau.', 'red');
         } finally {
             btn.textContent = window.t ? window.t('admin.sync') : '🔄 Sync TheSportsDB';
+            btn.disabled    = false;
+        }
+    }
+
+    // ── Nettoyage des matchs passés sans pari ────────────────────
+    async function cleanupMatches() {
+        const past = allMatches.filter(m =>
+            new Date(m.dateheure) < new Date() && parseInt(m.total_paris || 0) === 0
+        );
+        if (past.length === 0) {
+            showToast('ℹ️ Aucun match passé sans pari à supprimer.', 'blue');
+            return;
+        }
+        if (!confirm(`Supprimer ${past.length} match(s) passé(s) sans aucun pari ?\nCette action est irréversible.`)) return;
+
+        const btn   = document.getElementById('btn-cleanup');
+        const token = localStorage.getItem('token');
+        btn.textContent = '⏳ Suppression...';
+        btn.disabled    = true;
+
+        try {
+            const res  = await fetch(`${API}/api/admin/matches/cleanup`, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            const data = await res.json();
+            if (!res.ok) { showToast('❌ ' + data.message, 'red'); return; }
+
+            showToast(data.deleted > 0 ? `🗑️ ${data.message}` : `ℹ️ ${data.message}`, data.deleted > 0 ? 'green' : 'blue');
+            if (data.deleted > 0) await loadMatches();
+        } catch {
+            showToast('❌ Erreur réseau.', 'red');
+        } finally {
+            btn.textContent = window.t ? window.t('admin.cleanup') : '🗑️ Nettoyer sans pari';
             btn.disabled    = false;
         }
     }
