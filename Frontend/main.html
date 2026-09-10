@@ -335,13 +335,12 @@
                 // ID TheSportsDB FIFA World Cup 2026 (vérifié : retourne les vrais matchs)
                 const wcId = '4429';
 
-                // 2. Matchs à venir + résultats récents en parallèle
-                const [nextRes, pastRes] = await Promise.all([
+                // 2. Matchs à venir + 5 derniers résultats en parallèle
+                const [nextRes, past] = await Promise.all([
                     fetch(`${API_BASE}/eventsnextleague.php?id=${wcId}`),
-                    fetch(`${API_BASE}/eventspastleague.php?id=${wcId}`)
+                    fetchPastEvents(wcId, '2026')
                 ]);
                 const nextData = await nextRes.json();
-                const pastData = await pastRes.json();
                 let events = nextData.events || [];
 
                 // 3. Fallback saison complète si moins de 5 matchs
@@ -382,7 +381,7 @@
                 } else {
                     renderNext(events, cotesMap);
                 }
-                renderPast(pastData.events || []);
+                renderPast(past);
 
             } catch (err) {
                 // Fallback : base de données interne si TheSportsDB indisponible
@@ -510,6 +509,50 @@
                 .slice(0, 10);
         }
 
+        // Les 5 derniers résultats d'un championnat.
+        // Clé gratuite TheSportsDB : eventspastleague ne renvoie qu'UN match →
+        // on complète avec les journées précédentes (eventsround), puis avec la
+        // saison complète pour les tournois sans journées (Coupe du Monde, intRound = 0).
+        async function fetchPastEvents(leagueId, seasonHint) {
+            const pastResp = await fetch(`${API_BASE}/eventspastleague.php?id=${leagueId}`);
+            const pastData = await pastResp.json().catch(() => ({}));
+            let events = pastData.events || [];
+
+            const ref     = events[0];
+            const season  = (ref && ref.strSeason) || seasonHint;
+            const round   = ref ? parseInt(ref.intRound) : NaN;
+            const seen    = new Set(events.map(e => e.idEvent));
+            const collect = list => (list || []).forEach(e => {
+                if (!seen.has(e.idEvent)) { seen.add(e.idEvent); events.push(e); }
+            });
+            const finished = () => events.filter(e => e.intHomeScore != null && e.intAwayScore != null);
+
+            // Journée en cours et deux précédentes
+            if (season && round >= 1) {
+                const rounds = await Promise.all(
+                    [round, round - 1, round - 2].filter(r => r >= 1).map(r =>
+                        fetch(`${API_BASE}/eventsround.php?id=${leagueId}&r=${r}&s=${season}`)
+                            .then(res => res.json())
+                            .catch(() => ({}))
+                    )
+                );
+                rounds.forEach(d => collect(d.events));
+            }
+
+            // Repli saison complète (tournoi à élimination, début de saison…)
+            if (finished().length < 5 && season) {
+                try {
+                    const sRes  = await fetch(`${API_BASE}/eventsseason.php?id=${leagueId}&s=${season}`);
+                    const sData = await sRes.json();
+                    collect(sData.events);
+                } catch (_) { /* les résultats passés ne sont pas critiques */ }
+            }
+
+            return finished()
+                .sort((a, b) => (eventDate(b) || 0) - (eventDate(a) || 0))
+                .slice(0, 5);
+        }
+
         // --- LEAGUE DATA (TheSportsDB pour les championnats) ---
         async function fetchLeagueData(leagueId) {
             if (leagueId === 'wc2026') {
@@ -524,14 +567,13 @@
 
             try {
                 const token = localStorage.getItem('token');
-                const [upcoming, pastResp, rankResp] = await Promise.all([
+                const [upcoming, past, rankResp] = await Promise.all([
                     fetchUpcomingEvents(leagueId),
-                    fetch(`${API_BASE}/eventspastleague.php?id=${leagueId}`),
+                    fetchPastEvents(leagueId, currentSeason()),
                     fetch(`${API_BASE}/lookuptable.php?l=${leagueId}&s=${currentSeason()}`)
                 ]);
 
                 // Certaines réponses TheSportsDB sont vides (ex : pas de classement en LdC)
-                const pastData = await pastResp.json().catch(() => ({}));
                 const rankData = await rankResp.json().catch(() => ({}));
 
                 let events = upcoming;
@@ -572,7 +614,7 @@
                 }
 
                 renderNext(events, cotesMap);
-                renderPast(pastData.events || []);
+                renderPast(past);
                 renderSideRanking(rankData.table || []);
             } catch (error) {
                 console.error("Erreur API TheSportsDB:", error);
@@ -649,13 +691,17 @@
                 container.innerHTML = '<div class="col-span-2 p-4 text-center text-xs text-gray-400 italic">Aucun résultat récent.</div>';
                 return;
             }
-            events.slice(0, 8).forEach(event => {
+            events.slice(0, 5).forEach(event => {
+                const d = eventDate(event);
+                const dateStr = d
+                    ? d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+                    : (event.dateEvent || '');
                 container.innerHTML += `
                 <div class="bg-white border border-gray-100 p-3 rounded-xl flex justify-between items-center shadow-sm">
                     <span class="text-[10px] font-bold text-gray-600 truncate flex-1 text-right pr-2">${escapeHtml(event.strHomeTeam)}</span>
                     <div class="flex flex-col items-center gap-0.5">
                         <div class="bg-gray-100 text-indigo-600 border border-gray-200 px-2 py-0.5 rounded font-black text-[10px]">${event.intHomeScore} - ${event.intAwayScore}</div>
-                        <span class="text-[8px] text-gray-400">${event.dateEvent || ''}</span>
+                        <span class="text-[8px] text-gray-400">${dateStr}</span>
                     </div>
                     <span class="text-[10px] font-bold text-gray-600 truncate flex-1 text-left pl-2">${escapeHtml(event.strAwayTeam)}</span>
                 </div>`;
