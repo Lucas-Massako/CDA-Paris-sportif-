@@ -109,7 +109,8 @@ CREATE TABLE parii (
     CONSTRAINT fk_pari_user  FOREIGN KEY (id_user)  REFERENCES utilisateur(id_user) ON DELETE CASCADE,
     CONSTRAINT fk_pari_match FOREIGN KEY (id_match) REFERENCES match(id_match)      ON DELETE CASCADE,
     CONSTRAINT check_pronostic_valid CHECK (pronostic IN (0, 1, 2)),
-    CONSTRAINT check_statut_valid    CHECK (statut IN ('EN_COURS', 'GAGNE', 'PERDU'))
+    -- ANNULE : match reporté ou annulé, mise remboursée
+    CONSTRAINT check_statut_valid    CHECK (statut IN ('EN_COURS', 'GAGNE', 'PERDU', 'ANNULE'))
 );
 
 -- =====================================================

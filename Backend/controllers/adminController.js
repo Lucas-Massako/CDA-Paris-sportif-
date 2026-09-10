@@ -2,16 +2,39 @@ const pool = require('../config/db');
 const https = require('https');
 const { checkAndUnlockAvatars } = require('../utils/avatarUnlock');
 const { matchOutcome, computeGain } = require('../utils/betRules');
+const { classifyEvent } = require('../utils/matchStatus');
 
-// Utilitaire : fetch HTTPS simple sans dépendance externe
-function fetchJSON(url) {
+const TSDB            = 'https://www.thesportsdb.com/api/v1/json/123';
+const FETCH_TIMEOUT_MS = 8000;  // au-delà, on abandonne : l'API tierce ne doit pas bloquer la synchro
+const MAX_PARALLEL     = 4;     // requêtes simultanées vers TheSportsDB (politesse + quotas)
+
+// Utilitaire : fetch HTTPS sans dépendance externe, avec délai maximal
+function fetchJSON(url, timeoutMs = FETCH_TIMEOUT_MS) {
     return new Promise((resolve, reject) => {
-        https.get(url, res => {
+        const req = https.get(url, res => {
             let data = '';
             res.on('data', chunk => data += chunk);
             res.on('end', () => { try { resolve(JSON.parse(data)); } catch(e) { reject(e); } });
-        }).on('error', reject);
+        });
+        req.on('error', reject);
+        req.setTimeout(timeoutMs, () => {
+            req.destroy(new Error(`Délai dépassé (${timeoutMs} ms)`));
+        });
     });
+}
+
+// Exécute une tâche asynchrone sur une liste, `limit` éléments à la fois
+async function mapWithLimit(items, limit, task) {
+    const results = [];
+    let cursor = 0;
+    const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+        while (cursor < items.length) {
+            const i = cursor++;
+            results[i] = await task(items[i], i);
+        }
+    });
+    await Promise.all(workers);
+    return results;
 }
 
 // Logique de résolution partagée (utilisée par resolveMatch ET autoResolve)
@@ -24,27 +47,31 @@ async function resolveMatchById(client, matchId, homeScore, awayScore) {
         [matchId, 'EN_COURS']
     );
 
-    let nbGagnes = 0, nbPerdus = 0;
-    for (const bet of betsRes.rows) {
-        if (parseInt(bet.pronostic) === resultat) {
-            const gain = computeGain(bet.mise, bet.cote);
-            await client.query(
-                'UPDATE utilisateur SET bankroll = bankroll + $1 WHERE id_user = $2',
-                [gain, bet.id_user]
-            );
-            await client.query(
-                'UPDATE parii SET statut = $1 WHERE id_match = $2 AND id_user = $3 AND statut = $4',
-                ['GAGNE', matchId, bet.id_user, 'EN_COURS']
-            );
-            nbGagnes++;
-        } else {
-            await client.query(
-                'UPDATE parii SET statut = $1 WHERE id_match = $2 AND id_user = $3 AND statut = $4',
-                ['PERDU', matchId, bet.id_user, 'EN_COURS']
-            );
-            nbPerdus++;
-        }
+    // Le calcul du gain reste en JavaScript (règle métier unique, couverte par les tests) ;
+    // le crédit est ensuite appliqué en une seule requête plutôt qu'une par gagnant.
+    const gagnants = betsRes.rows
+        .filter(b => parseInt(b.pronostic) === resultat)
+        .map(b => ({ id_user: b.id_user, gain: computeGain(b.mise, b.cote) }));
+
+    if (gagnants.length > 0) {
+        const values = gagnants.map((_, i) => `($${i * 2 + 1}::int, $${i * 2 + 2}::int)`).join(', ');
+        await client.query(
+            `UPDATE utilisateur u SET bankroll = bankroll + v.gain
+             FROM (VALUES ${values}) AS v(id_user, gain)
+             WHERE u.id_user = v.id_user`,
+            gagnants.flatMap(g => [g.id_user, g.gain])
+        );
     }
+
+    // Bascule des tickets en une requête (GAGNE si le pronostic correspond, PERDU sinon)
+    await client.query(
+        `UPDATE parii SET statut = CASE WHEN pronostic = $2 THEN 'GAGNE' ELSE 'PERDU' END
+         WHERE id_match = $1 AND statut = 'EN_COURS'`,
+        [matchId, resultat]
+    );
+
+    const nbGagnes = gagnants.length;
+    const nbPerdus = betsRes.rows.length - nbGagnes;
 
     await client.query('UPDATE match SET scorefinal = $1 WHERE id_match = $2', [scoreStr, matchId]);
 
@@ -53,6 +80,29 @@ async function resolveMatchById(client, matchId, homeScore, awayScore) {
     userIds.forEach(uid => checkAndUnlockAvatars(uid).catch(() => {}));
 
     return { scoreStr, nbGagnes, nbPerdus, totalParis: betsRes.rows.length };
+}
+
+// Match reporté / annulé : on rembourse les mises et on clôt les tickets en ANNULE.
+// Le match reste non résolu (scorefinal NULL) pour pouvoir être reprogrammé.
+async function refundMatchById(client, matchId) {
+    const refund = await client.query(
+        `UPDATE parii SET statut = 'ANNULE'
+         WHERE id_match = $1 AND statut = 'EN_COURS'
+         RETURNING id_user, mise`,
+        [matchId]
+    );
+
+    if (refund.rows.length > 0) {
+        const values = refund.rows.map((_, i) => `($${i * 2 + 1}::int, $${i * 2 + 2}::int)`).join(', ');
+        await client.query(
+            `UPDATE utilisateur u SET bankroll = bankroll + v.mise
+             FROM (VALUES ${values}) AS v(id_user, mise)
+             WHERE u.id_user = v.id_user`,
+            refund.rows.flatMap(r => [r.id_user, r.mise])
+        );
+    }
+
+    return { nbRembourses: refund.rows.length };
 }
 
 // GET /api/admin/matches — tous les matchs avec leur statut de résolution
@@ -132,86 +182,118 @@ async function resolveMatch(req, res) {
     }
 }
 
+// Traite un match en attente : interroge TheSportsDB, puis résout ou rembourse.
+// Chaque match a sa propre transaction, pour qu'un échec isolé n'annule pas les autres.
+async function processPendingMatch(match) {
+    const libelle = `${match.domicile} vs ${match.exterieur}`;
+
+    const data  = await fetchJSON(`${TSDB}/lookupevent.php?id=${match.id_external}`);
+    const event = data.events?.[0];
+    const etat  = classifyEvent(event);
+
+    if (etat === 'pending') {
+        return { match: libelle, status: 'skip', reason: 'Score officiel non disponible' };
+    }
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        // Verrou : le match a pu être résolu à la main entre-temps
+        const check = await client.query(
+            'SELECT scorefinal FROM match WHERE id_match = $1 FOR UPDATE',
+            [match.id_match]
+        );
+        if (check.rows.length === 0 || check.rows[0].scorefinal !== null) {
+            await client.query('ROLLBACK');
+            return { match: libelle, status: 'skip', reason: 'Déjà résolu' };
+        }
+
+        if (etat === 'cancelled') {
+            const { nbRembourses } = await refundMatchById(client, match.id_match);
+            await client.query('COMMIT');
+            return { match: libelle, status: 'cancelled', rembourses: nbRembourses };
+        }
+
+        const result = await resolveMatchById(
+            client,
+            match.id_match,
+            parseInt(event.intHomeScore),
+            parseInt(event.intAwayScore)
+        );
+        await client.query('COMMIT');
+        return {
+            match:  libelle,
+            status: 'resolved',
+            score:  result.scoreStr,
+            gagnes: result.nbGagnes,
+            perdus: result.nbPerdus
+        };
+    } catch (err) {
+        await client.query('ROLLBACK').catch(() => {});
+        throw err;
+    } finally {
+        client.release();
+    }
+}
+
+/**
+ * Synchronisation des résultats. Appelée par la route admin et par le planificateur.
+ * @returns {{resolved:number, cancelled:number, skipped:number, errors:number, details:Array}}
+ */
+async function runAutoResolve() {
+    // Matchs non résolus portant un identifiant TheSportsDB (les matchs WC internes,
+    // absents de l'API, restent réservés à la résolution manuelle).
+    // Marge de 2 h après le coup d'envoi avant d'interroger l'API.
+    const pending = await pool.query(`
+        SELECT m.id_match, m.id_external, e1.nom AS domicile, e2.nom AS exterieur
+        FROM match m
+        JOIN equipe e1 ON m.id_equipedomicile  = e1.id_equipe
+        JOIN equipe e2 ON m.id_equipeexterieur = e2.id_equipe
+        WHERE m.scorefinal IS NULL
+          AND m.id_external IS NOT NULL
+          AND m.id_external NOT LIKE 'wc2026-%'
+          AND m.dateheure < NOW() - INTERVAL '2 hours'
+    `);
+
+    if (pending.rows.length === 0) {
+        return { resolved: 0, cancelled: 0, skipped: 0, errors: 0, details: [] };
+    }
+
+    const outcomes = await mapWithLimit(pending.rows, MAX_PARALLEL, async match => {
+        try {
+            return await processPendingMatch(match);
+        } catch (err) {
+            console.error(`Synchro ${match.id_external} :`, err.message);
+            return { match: `${match.domicile} vs ${match.exterieur}`, status: 'error', reason: err.message };
+        }
+    });
+
+    const count = s => outcomes.filter(o => o.status === s).length;
+    return {
+        resolved:  count('resolved'),
+        cancelled: count('cancelled'),
+        skipped:   count('skip'),
+        errors:    count('error'),
+        details:   outcomes
+    };
+}
+
 // POST /api/admin/auto-resolve — résolution automatique via TheSportsDB
 async function autoResolve(req, res) {
-    const TSDB = 'https://www.thesportsdb.com/api/v1/json/123';
-
     try {
-        // Matchs non résolus avec un id_external TheSportsDB (pas nos matchs WC internes)
-        // On attend au moins 2h après l'heure prévue avant de tenter la résolution
-        const pending = await pool.query(`
-            SELECT m.id_match, m.id_external, e1.nom AS domicile, e2.nom AS exterieur
-            FROM match m
-            JOIN equipe e1 ON m.id_equipedomicile  = e1.id_equipe
-            JOIN equipe e2 ON m.id_equipeexterieur = e2.id_equipe
-            WHERE m.scorefinal IS NULL
-              AND m.id_external IS NOT NULL
-              AND m.id_external NOT LIKE 'wc2026-%'
-              AND m.dateheure < NOW() - INTERVAL '2 hours'
-        `);
+        const r = await runAutoResolve();
 
-        if (pending.rows.length === 0) {
-            return res.json({ message: "Aucun match en attente de résolution automatique.", resolved: 0, skipped: 0 });
+        if (r.details.length === 0) {
+            return res.json({ message: "Aucun match en attente de résolution automatique.", ...r });
         }
 
-        let resolved = 0, skipped = 0, errors = 0;
-        const details = [];
+        const parts = [`${r.resolved} résolu(s)`];
+        if (r.cancelled) parts.push(`${r.cancelled} remboursé(s)`);
+        parts.push(`${r.skipped} ignoré(s)`);
+        if (r.errors) parts.push(`${r.errors} en erreur`);
 
-        for (const match of pending.rows) {
-            try {
-                const data = await fetchJSON(`${TSDB}/lookupevent.php?id=${match.id_external}`);
-                const event = data.events?.[0];
-
-                // TheSportsDB renvoie 'FT', 'AET', 'PEN' ou 'Match Finished' selon les matchs
-                const FINISHED_STATUSES = ['Match Finished', 'FT', 'AET', 'PEN'];
-                if (!event || !FINISHED_STATUSES.includes(event.strStatus) ||
-                    event.intHomeScore == null || event.intAwayScore == null) {
-                    skipped++;
-                    details.push({ match: `${match.domicile} vs ${match.exterieur}`, status: 'skip', reason: 'Score non disponible' });
-                    continue;
-                }
-
-                const homeScore = parseInt(event.intHomeScore);
-                const awayScore = parseInt(event.intAwayScore);
-
-                const client = await pool.connect();
-                try {
-                    await client.query('BEGIN');
-                    // Vérifier qu'il n'a pas déjà été résolu entre temps
-                    const check = await client.query(
-                        'SELECT scorefinal FROM match WHERE id_match = $1 FOR UPDATE', [match.id_match]
-                    );
-                    if (check.rows[0]?.scorefinal !== null) {
-                        await client.query('ROLLBACK');
-                        skipped++;
-                        continue;
-                    }
-                    const result = await resolveMatchById(client, match.id_match, homeScore, awayScore);
-                    await client.query('COMMIT');
-                    resolved++;
-                    details.push({
-                        match:  `${match.domicile} vs ${match.exterieur}`,
-                        status: 'resolved',
-                        score:  result.scoreStr,
-                        gagnes: result.nbGagnes,
-                        perdus: result.nbPerdus
-                    });
-                } catch (err) {
-                    await client.query('ROLLBACK');
-                    errors++;
-                } finally {
-                    client.release();
-                }
-            } catch {
-                errors++;
-            }
-        }
-
-        res.json({
-            message:  `Synchronisation terminée : ${resolved} résolu(s), ${skipped} ignoré(s)`,
-            resolved, skipped, errors, details
-        });
-
+        res.json({ message: `Synchronisation terminée : ${parts.join(', ')}`, ...r });
     } catch (err) {
         console.error("Erreur auto-resolve:", err.message);
         res.status(500).json({ message: "Erreur serveur lors de la synchronisation." });
@@ -239,4 +321,7 @@ async function cleanupMatches(req, res) {
     }
 }
 
-module.exports = { getMatches, resolveMatch, autoResolve, cleanupMatches };
+module.exports = {
+    getMatches, resolveMatch, autoResolve, cleanupMatches,
+    runAutoResolve, resolveMatchById, refundMatchById
+};

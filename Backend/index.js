@@ -6,6 +6,7 @@ const betRoutes = require('./routes/betRoutes');
 const matchRoutes = require('./routes/matchRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const pool = require('./config/db');
+const { startScheduler } = require('./utils/scheduler');
 
 const app = express();
 app.use(cors());
@@ -29,4 +30,6 @@ app.get('/', async (req, res) => {
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
     console.log(`Serveur API lancé sur le port ${PORT}`);
+    // Synchronisation périodique des résultats de matchs (résolution des paris)
+    startScheduler();
 });
