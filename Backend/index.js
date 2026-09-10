@@ -9,6 +9,13 @@ const pool = require('./config/db');
 const { startScheduler } = require('./utils/scheduler');
 
 const app = express();
+
+// Derrière le proxy Railway, l'IP réelle du client arrive dans X-Forwarded-For.
+// Sans cette ligne, express-rate-limit voit une IP unique pour tout le trafic :
+// le quota anti-brute-force deviendrait global au lieu d'être appliqué par IP.
+// La valeur 1 ne fait confiance qu'au premier relais (pas d'usurpation possible).
+app.set('trust proxy', 1);
+
 app.use(cors());
 app.use(express.json());
 
