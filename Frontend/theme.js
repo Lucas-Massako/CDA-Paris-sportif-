@@ -1,6 +1,6 @@
 (function () {
-  const THEME_KEY = 'cdabet_theme';
-  const LANG_KEY  = 'cdabet_lang';
+  const THEME_KEY = 'footix_theme';
+  const LANG_KEY  = 'footix_lang';
 
   let dark = localStorage.getItem(THEME_KEY) === 'dark';
   let lang = localStorage.getItem(LANG_KEY) || 'fr';
@@ -178,25 +178,25 @@ html.dark #resolve-modal > div { background: #1e293b !important; }
   // ── Appliquer le thème ────────────────────────────────────────────────────
   function applyTheme() {
     document.documentElement.classList.toggle('dark', dark);
-    const btn = document.getElementById('_cdabet_dark_btn');
+    const btn = document.getElementById('_footix_dark_btn');
     if (btn) btn.textContent = dark ? '☀️' : '🌙';
   }
 
   // ── Injecter le CSS dark mode ─────────────────────────────────────────────
   function injectCSS() {
-    if (document.getElementById('_cdabet_dark_css')) return;
+    if (document.getElementById('_footix_dark_css')) return;
     const s = document.createElement('style');
-    s.id = '_cdabet_dark_css';
+    s.id = '_footix_dark_css';
     s.textContent = DARK_CSS;
     document.head.appendChild(s);
   }
 
   // ── Créer le widget flottant ──────────────────────────────────────────────
   function createWidget() {
-    if (document.getElementById('_cdabet_widget')) return;
+    if (document.getElementById('_footix_widget')) return;
 
     const wrap = document.createElement('div');
-    wrap.id = '_cdabet_widget';
+    wrap.id = '_footix_widget';
     wrap.style.cssText = [
       'position:fixed', 'bottom:24px', 'right:24px',
       'display:flex', 'gap:8px', 'z-index:99999',
@@ -221,13 +221,13 @@ html.dark #resolve-modal > div { background: #1e293b !important; }
       return b;
     }
 
-    const darkBtn = makeBtn('_cdabet_dark_btn', dark ? '☀️' : '🌙', 'Dark / Light mode', () => {
+    const darkBtn = makeBtn('_footix_dark_btn', dark ? '☀️' : '🌙', 'Dark / Light mode', () => {
       dark = !dark;
       localStorage.setItem(THEME_KEY, dark ? 'dark' : 'light');
       applyTheme();
     });
 
-    const langBtn = makeBtn('_cdabet_lang_btn', lang === 'fr' ? '🇬🇧' : '🇫🇷', 'FR / EN', () => {
+    const langBtn = makeBtn('_footix_lang_btn', lang === 'fr' ? '🇬🇧' : '🇫🇷', 'FR / EN', () => {
       lang = lang === 'fr' ? 'en' : 'fr';
       localStorage.setItem(LANG_KEY, lang);
       langBtn.textContent = lang === 'fr' ? '🇬🇧' : '🇫🇷';

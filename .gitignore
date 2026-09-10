@@ -16,3 +16,5 @@ build/
 
 # Logs
 npm-debug.log*
+# Fichiers système macOS (tous niveaux)
+**/.DS_Store

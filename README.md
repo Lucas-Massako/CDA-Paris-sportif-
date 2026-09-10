@@ -1,6 +1,6 @@
-# 🏆 CDA Bet (ex-FootixScore) - Projet CDA
+# 🏆 Footix — Le pari : une compétition saine
 
-CDA Bet est une application Fullstack de pronostics sportifs entre amis (sans argent réel, basée sur un système de points), développée dans le cadre de la validation du titre **Concepteur Développeur d'Applications (CDA)**.
+Footix est une application Fullstack de pronostics sportifs entre amis (sans argent réel, basée sur un système de points), développée dans le cadre de la validation du titre **Concepteur Développeur d'Applications (CDA)**.
 
 ---
 

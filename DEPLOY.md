@@ -1,4 +1,4 @@
-# CDA Bet — Guide de déploiement Railway + Vercel
+# Footix — Guide de déploiement Railway + Vercel
 
 ## Architecture cible
 

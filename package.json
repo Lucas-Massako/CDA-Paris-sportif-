@@ -1,7 +1,7 @@
 {
-  "name": "projet-cda-copie",
+  "name": "footix",
   "version": "1.0.0",
-  "description": "CDA Bet est une application Fullstack de pronostics sportifs entre amis (sans argent réel, basée sur un système de points), développée dans le cadre de la validation du titre **Concepteur Développeur d'Applications (CDA)**.",
+  "description": "Footix est une application Full-Stack de pronostics sportifs entre amis, sans argent réel (bankroll de points virtuels), développée pour la validation du titre Concepteur Développeur d'Applications (CDA).",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

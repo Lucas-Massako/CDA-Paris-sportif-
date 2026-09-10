@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CDA Bet - Dashboard (Vraies Cotes)</title>
+    <title>Footix — Prototype cotes réelles</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap');
@@ -21,7 +21,7 @@
         <header class="border-b border-gray-100 px-8 py-4 flex flex-col md:flex-row items-center justify-between gap-6 bg-white/80 backdrop-blur-md sticky top-0 z-40">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black shadow-lg shadow-indigo-200">⚽</div>
-                <h1 class="text-xl font-bold text-gray-900">CDA Bet</h1>
+                <h1 class="text-xl font-bold text-gray-900">Footix</h1>
             </div>
 
             <div class="flex items-center gap-3">
@@ -110,13 +110,17 @@
 
     <script>
         // ==============================================================================
-        // 🔑 1. CONFIGURATION DE TON API THE ODDS
-        // Rends-toi sur https://the-odds-api.com/ et récupère ta clé API gratuite.
-        // Colle ta clé à la place de "TA_CLE_API_ICI" en gardant les guillemets.
+        // PROTOTYPE D'ÉVALUATION — The Odds API
+        // Page d'étude conservée comme trace de l'évaluation de The Odds API
+        // (cotes réelles des bookmakers). Solution écartée pour le MVP : les quotas
+        // de l'offre gratuite sont trop restrictifs pour un usage en production.
+        // L'application retenue (main.html) génère et persiste ses cotes côté serveur.
+        //
+        // Aucune clé n'est versionnée : renseignez la vôtre localement pour rejouer
+        // le prototype (https://the-odds-api.com/).
         // ==============================================================================
-        const ODDS_API_KEY = "2ba6fa8df2af13fc3cff7d89a7b7f997"; 
-        
-        // Ancienne clé pour garder le classement fonctionnel
+        const ODDS_API_KEY = "VOTRE_CLE_API";
+
         const SPORTSDB_API_BASE = "https://www.thesportsdb.com/api/v1/json/123";
 
         // Dictionnaire pour lier la nouvelle API à l'ancienne (pour le classement)
@@ -130,8 +134,14 @@
         };
 
         async function fetchLeagueData(oddsLeagueId) {
-            if(ODDS_API_KEY === "TA_CLE_API_ICI") {
-                alert("⚠️ Attention : Tu dois entrer ta clé The Odds API dans le code !");
+            if (ODDS_API_KEY === "VOTRE_CLE_API") {
+                document.getElementById('container-next').innerHTML =
+                    '<div class="bg-amber-50 border border-amber-200 text-amber-800 p-6 rounded-2xl text-sm">' +
+                    '<strong>Prototype d’évaluation.</strong> Renseignez une clé The Odds API dans ' +
+                    'la constante ODDS_API_KEY pour rejouer cette page. L’application utilise ' +
+                    '<a href="main.html" class="underline font-bold">main.html</a>, dont les cotes sont ' +
+                    'générées et persistées côté serveur.</div>';
+                return;
             }
 
             const select = document.getElementById('league-select');
