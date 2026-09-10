@@ -5,9 +5,8 @@
 INSERT INTO EQUIPE (Nom, Pays, ID_API) VALUES ('Jamaique', 'Jamaique', 'nat-jamaica')
 ON CONFLICT (Nom, Pays) DO NOTHING;
 
-INSERT INTO MATCH (ID_Sport, ID_EquipeDomicile, ID_EquipeExterieur, DateHeure, ID_External)
+INSERT INTO MATCH (ID_EquipeDomicile, ID_EquipeExterieur, DateHeure, ID_External)
 VALUES (
-  1,
   (SELECT ID_Equipe FROM EQUIPE WHERE ID_API = 'nat-mexico'),
   (SELECT ID_Equipe FROM EQUIPE WHERE Nom = 'Jamaique'),
   '2026-06-11 20:00:00',
@@ -15,9 +14,8 @@ VALUES (
 ) ON CONFLICT (ID_External) DO NOTHING;
 
 -- Groupe A : USA vs Panama (SoFi Stadium, 22h)
-INSERT INTO MATCH (ID_Sport, ID_EquipeDomicile, ID_EquipeExterieur, DateHeure, ID_External)
+INSERT INTO MATCH (ID_EquipeDomicile, ID_EquipeExterieur, DateHeure, ID_External)
 VALUES (
-  1,
   (SELECT ID_Equipe FROM EQUIPE WHERE ID_API = 'nat-usa'),
   (SELECT ID_Equipe FROM EQUIPE WHERE ID_API = 'nat-panama'),
   '2026-06-11 22:00:00',
@@ -25,9 +23,8 @@ VALUES (
 ) ON CONFLICT (ID_External) DO NOTHING;
 
 -- Groupe C : Canada vs Maroc (BMO Field, Toronto, 19h)
-INSERT INTO MATCH (ID_Sport, ID_EquipeDomicile, ID_EquipeExterieur, DateHeure, ID_External)
+INSERT INTO MATCH (ID_EquipeDomicile, ID_EquipeExterieur, DateHeure, ID_External)
 VALUES (
-  1,
   (SELECT ID_Equipe FROM EQUIPE WHERE ID_API = 'nat-canada'),
   (SELECT ID_Equipe FROM EQUIPE WHERE ID_API = 'nat-morocco'),
   '2026-06-11 19:00:00',

@@ -1,14 +1,6 @@
 const pool = require('../config/db');
 const { checkAndUnlockAvatars } = require('../utils/avatarUnlock');
-
-// Nom d'équipe : lettres (accents inclus), chiffres, espaces et ponctuation usuelle — pas de HTML
-const TEAM_NAME_REGEX = /^[\p{L}\p{N} .,'’\-()&/]+$/u;
-function isValidTeamName(name) {
-    return typeof name === 'string'
-        && name.trim().length > 0
-        && name.trim().length <= 100
-        && TEAM_NAME_REGEX.test(name.trim());
-}
+const { isValidTeamName } = require('../utils/validators');
 
 // Find or create a team by name, return its id_equipe
 async function findOrCreateTeam(client, name) {
@@ -35,13 +27,12 @@ async function findOrCreateMatch(client, { event_id, home_team, away_team, date 
 
     const homeId = await findOrCreateTeam(client, home_team);
     const awayId = await findOrCreateTeam(client, away_team);
-    const sportId = 1; // Football
 
     const inserted = await client.query(
-        `INSERT INTO match (id_sport, id_equipedomicile, id_equipeexterieur, dateheure, id_external)
-         VALUES ($1, $2, $3, $4, $5)
+        `INSERT INTO match (id_equipedomicile, id_equipeexterieur, dateheure, id_external)
+         VALUES ($1, $2, $3, $4)
          RETURNING id_match`,
-        [sportId, homeId, awayId, date || new Date(), event_id]
+        [homeId, awayId, date || new Date(), event_id]
     );
     return inserted.rows[0].id_match;
 }

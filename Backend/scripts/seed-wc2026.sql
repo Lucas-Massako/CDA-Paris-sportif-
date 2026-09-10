@@ -59,85 +59,85 @@ BEGIN
 
   -- France 2-1 Irlande du Nord (joué ce soir - ne s'affiche pas dans "à parier")
   IF v_france IS NOT NULL AND v_nireland IS NOT NULL THEN
-    INSERT INTO MATCH (ID_Sport,ID_EquipeDomicile,ID_EquipeExterieur,DateHeure,ScoreFinal,ID_External)
-    VALUES (1,v_france,v_nireland,'2026-06-09 21:00:00','2-1','nl-2026-fra-nir')
+    INSERT INTO MATCH (ID_EquipeDomicile,ID_EquipeExterieur,DateHeure,ScoreFinal,ID_External)
+    VALUES (v_france,v_nireland,'2026-06-09 21:00:00','2-1','nl-2026-fra-nir')
     ON CONFLICT (ID_External) DO NOTHING;
     RAISE NOTICE 'France-NordIrl inséré';
   END IF;
 
   -- JEUDI 12 JUIN
   IF v_usa IS NOT NULL AND v_bolivia IS NOT NULL THEN
-    INSERT INTO MATCH (ID_Sport,ID_EquipeDomicile,ID_EquipeExterieur,DateHeure,ID_External)
-    VALUES (1,v_usa,v_bolivia,'2026-06-12 18:00:00','wc2026-gA-usa-bol')
+    INSERT INTO MATCH (ID_EquipeDomicile,ID_EquipeExterieur,DateHeure,ID_External)
+    VALUES (v_usa,v_bolivia,'2026-06-12 18:00:00','wc2026-gA-usa-bol')
     ON CONFLICT (ID_External) DO NOTHING;
   END IF;
 
   IF v_mexico IS NOT NULL AND v_ecuador IS NOT NULL THEN
-    INSERT INTO MATCH (ID_Sport,ID_EquipeDomicile,ID_EquipeExterieur,DateHeure,ID_External)
-    VALUES (1,v_mexico,v_ecuador,'2026-06-12 21:00:00','wc2026-gB-mex-ecu')
+    INSERT INTO MATCH (ID_EquipeDomicile,ID_EquipeExterieur,DateHeure,ID_External)
+    VALUES (v_mexico,v_ecuador,'2026-06-12 21:00:00','wc2026-gB-mex-ecu')
     ON CONFLICT (ID_External) DO NOTHING;
   END IF;
 
   IF v_canada IS NOT NULL AND v_honduras IS NOT NULL THEN
-    INSERT INTO MATCH (ID_Sport,ID_EquipeDomicile,ID_EquipeExterieur,DateHeure,ID_External)
-    VALUES (1,v_canada,v_honduras,'2026-06-13 00:00:00','wc2026-gC-can-hon')
+    INSERT INTO MATCH (ID_EquipeDomicile,ID_EquipeExterieur,DateHeure,ID_External)
+    VALUES (v_canada,v_honduras,'2026-06-13 00:00:00','wc2026-gC-can-hon')
     ON CONFLICT (ID_External) DO NOTHING;
   END IF;
 
   -- VENDREDI 13 JUIN
   IF v_germany IS NOT NULL AND v_japan IS NOT NULL THEN
-    INSERT INTO MATCH (ID_Sport,ID_EquipeDomicile,ID_EquipeExterieur,DateHeure,ID_External)
-    VALUES (1,v_germany,v_japan,'2026-06-13 18:00:00','wc2026-gE-ger-jpn')
+    INSERT INTO MATCH (ID_EquipeDomicile,ID_EquipeExterieur,DateHeure,ID_External)
+    VALUES (v_germany,v_japan,'2026-06-13 18:00:00','wc2026-gE-ger-jpn')
     ON CONFLICT (ID_External) DO NOTHING;
   END IF;
 
   IF v_spain IS NOT NULL AND v_morocco IS NOT NULL THEN
-    INSERT INTO MATCH (ID_Sport,ID_EquipeDomicile,ID_EquipeExterieur,DateHeure,ID_External)
-    VALUES (1,v_spain,v_morocco,'2026-06-13 21:00:00','wc2026-gF-esp-mar')
+    INSERT INTO MATCH (ID_EquipeDomicile,ID_EquipeExterieur,DateHeure,ID_External)
+    VALUES (v_spain,v_morocco,'2026-06-13 21:00:00','wc2026-gF-esp-mar')
     ON CONFLICT (ID_External) DO NOTHING;
   END IF;
 
   IF v_portugal IS NOT NULL AND v_uruguay IS NOT NULL THEN
-    INSERT INTO MATCH (ID_Sport,ID_EquipeDomicile,ID_EquipeExterieur,DateHeure,ID_External)
-    VALUES (1,v_portugal,v_uruguay,'2026-06-14 00:00:00','wc2026-gG-por-uru')
+    INSERT INTO MATCH (ID_EquipeDomicile,ID_EquipeExterieur,DateHeure,ID_External)
+    VALUES (v_portugal,v_uruguay,'2026-06-14 00:00:00','wc2026-gG-por-uru')
     ON CONFLICT (ID_External) DO NOTHING;
   END IF;
 
   -- SAMEDI 14 JUIN
   IF v_france IS NOT NULL AND v_colombia IS NOT NULL THEN
-    INSERT INTO MATCH (ID_Sport,ID_EquipeDomicile,ID_EquipeExterieur,DateHeure,ID_External)
-    VALUES (1,v_france,v_colombia,'2026-06-14 21:00:00','wc2026-gH-fra-col')
+    INSERT INTO MATCH (ID_EquipeDomicile,ID_EquipeExterieur,DateHeure,ID_External)
+    VALUES (v_france,v_colombia,'2026-06-14 21:00:00','wc2026-gH-fra-col')
     ON CONFLICT (ID_External) DO NOTHING;
   END IF;
 
   IF v_brazil IS NOT NULL AND v_southkorea IS NOT NULL THEN
-    INSERT INTO MATCH (ID_Sport,ID_EquipeDomicile,ID_EquipeExterieur,DateHeure,ID_External)
-    VALUES (1,v_brazil,v_southkorea,'2026-06-14 18:00:00','wc2026-gI-bra-kor')
+    INSERT INTO MATCH (ID_EquipeDomicile,ID_EquipeExterieur,DateHeure,ID_External)
+    VALUES (v_brazil,v_southkorea,'2026-06-14 18:00:00','wc2026-gI-bra-kor')
     ON CONFLICT (ID_External) DO NOTHING;
   END IF;
 
   IF v_argentina IS NOT NULL AND v_panama IS NOT NULL THEN
-    INSERT INTO MATCH (ID_Sport,ID_EquipeDomicile,ID_EquipeExterieur,DateHeure,ID_External)
-    VALUES (1,v_argentina,v_panama,'2026-06-15 00:00:00','wc2026-gJ-arg-pan')
+    INSERT INTO MATCH (ID_EquipeDomicile,ID_EquipeExterieur,DateHeure,ID_External)
+    VALUES (v_argentina,v_panama,'2026-06-15 00:00:00','wc2026-gJ-arg-pan')
     ON CONFLICT (ID_External) DO NOTHING;
   END IF;
 
   -- DIMANCHE 15 JUIN
   IF v_england IS NOT NULL AND v_senegal IS NOT NULL THEN
-    INSERT INTO MATCH (ID_Sport,ID_EquipeDomicile,ID_EquipeExterieur,DateHeure,ID_External)
-    VALUES (1,v_england,v_senegal,'2026-06-15 21:00:00','wc2026-gK-eng-sen')
+    INSERT INTO MATCH (ID_EquipeDomicile,ID_EquipeExterieur,DateHeure,ID_External)
+    VALUES (v_england,v_senegal,'2026-06-15 21:00:00','wc2026-gK-eng-sen')
     ON CONFLICT (ID_External) DO NOTHING;
   END IF;
 
   IF v_netherlands IS NOT NULL AND v_australia IS NOT NULL THEN
-    INSERT INTO MATCH (ID_Sport,ID_EquipeDomicile,ID_EquipeExterieur,DateHeure,ID_External)
-    VALUES (1,v_netherlands,v_australia,'2026-06-15 18:00:00','wc2026-gL-ned-aus')
+    INSERT INTO MATCH (ID_EquipeDomicile,ID_EquipeExterieur,DateHeure,ID_External)
+    VALUES (v_netherlands,v_australia,'2026-06-15 18:00:00','wc2026-gL-ned-aus')
     ON CONFLICT (ID_External) DO NOTHING;
   END IF;
 
   IF v_belgium IS NOT NULL AND v_poland IS NOT NULL THEN
-    INSERT INTO MATCH (ID_Sport,ID_EquipeDomicile,ID_EquipeExterieur,DateHeure,ID_External)
-    VALUES (1,v_belgium,v_poland,'2026-06-16 00:00:00','wc2026-gD-bel-pol')
+    INSERT INTO MATCH (ID_EquipeDomicile,ID_EquipeExterieur,DateHeure,ID_External)
+    VALUES (v_belgium,v_poland,'2026-06-16 00:00:00','wc2026-gD-bel-pol')
     ON CONFLICT (ID_External) DO NOTHING;
   END IF;
 

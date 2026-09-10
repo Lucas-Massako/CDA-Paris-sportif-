@@ -1,6 +1,7 @@
 const pool = require('../config/db');
 const https = require('https');
 const { checkAndUnlockAvatars } = require('../utils/avatarUnlock');
+const { matchOutcome, computeGain } = require('../utils/betRules');
 
 // Utilitaire : fetch HTTPS simple sans dépendance externe
 function fetchJSON(url) {
@@ -15,11 +16,7 @@ function fetchJSON(url) {
 
 // Logique de résolution partagée (utilisée par resolveMatch ET autoResolve)
 async function resolveMatchById(client, matchId, homeScore, awayScore) {
-    let resultat;
-    if (homeScore > awayScore)       resultat = 1;
-    else if (awayScore > homeScore)  resultat = 2;
-    else                             resultat = 0;
-
+    const resultat = matchOutcome(homeScore, awayScore);
     const scoreStr = `${homeScore}-${awayScore}`;
 
     const betsRes = await client.query(
@@ -30,7 +27,7 @@ async function resolveMatchById(client, matchId, homeScore, awayScore) {
     let nbGagnes = 0, nbPerdus = 0;
     for (const bet of betsRes.rows) {
         if (parseInt(bet.pronostic) === resultat) {
-            const gain = Math.round(bet.mise * parseFloat(bet.cote));
+            const gain = computeGain(bet.mise, bet.cote);
             await client.query(
                 'UPDATE utilisateur SET bankroll = bankroll + $1 WHERE id_user = $2',
                 [gain, bet.id_user]

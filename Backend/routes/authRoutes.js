@@ -5,6 +5,7 @@ const jwt        = require('jsonwebtoken');
 const rateLimit  = require('express-rate-limit');
 const pool       = require('../config/db');
 const { checkAndUnlockAvatars } = require('../utils/avatarUnlock');
+const { validateRegister } = require('../utils/validators');
 
 // Rate limiter : max 10 tentatives par IP sur 15 minutes
 const authLimiter = rateLimit({
@@ -15,16 +16,6 @@ const authLimiter = rateLimit({
     legacyHeaders: false
 });
 
-// Validation basique des inputs
-function validateRegister(name, email, password) {
-    if (!name || name.trim().length < 2 || name.trim().length > 50)
-        return "Le pseudo doit faire entre 2 et 50 caractères.";
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 100)
-        return "Email invalide.";
-    if (!password || password.length < 6 || password.length > 100)
-        return "Le mot de passe doit faire entre 6 et 100 caractères.";
-    return null;
-}
 
 // --- ROUTE INSCRIPTION ---
 router.post('/register', authLimiter, async (req, res) => {

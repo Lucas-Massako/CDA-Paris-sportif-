@@ -1,5 +1,24 @@
 const pool = require('../config/db');
 
+// Règles de déblocage pures (testables sans base de données) :
+// à partir des statistiques d'un joueur, renvoie la liste des avatars à débloquer
+function computeUnlocks({ betCount, rank, totalUsers, hasWcBet, hasHighOddsWin }) {
+    const pct = totalUsers > 0 ? rank / totalUsers : 1;
+    const toUnlock = [1]; // DEFAULT toujours débloqué
+
+    if (betCount >= 1)   toUnlock.push(2);  // BETS_1
+    if (betCount >= 5)   toUnlock.push(3);  // BETS_5
+    if (betCount >= 20)  toUnlock.push(4);  // BETS_20
+    if (hasHighOddsWin)  toUnlock.push(5);  // WIN_HIGH_ODDS
+    if (pct <= 0.25)     toUnlock.push(6);  // TOP_25PCT
+    if (pct <= 0.10)     toUnlock.push(7);  // TOP_10PCT
+    if (rank === 1)      toUnlock.push(8);  // RANK_1
+    if (pct >= 0.80)     toUnlock.push(9);  // BOT_20PCT
+    if (hasWcBet)        toUnlock.push(10); // WC_BET
+
+    return toUnlock;
+}
+
 async function checkAndUnlockAvatars(userId) {
     try {
         const [betRes, rankRes, totalRes, wcRes, highOddsRes] = await Promise.all([
@@ -19,24 +38,13 @@ async function checkAndUnlockAvatars(userId) {
                 [userId])
         ]);
 
-        const betCount   = parseInt(betRes.rows[0].total);
-        const rank       = rankRes.rows.length > 0 ? parseInt(rankRes.rows[0].rank) : 9999;
-        const totalUsers = parseInt(totalRes.rows[0].total);
-        const pct        = totalUsers > 0 ? rank / totalUsers : 1;
-        const hasWcBet      = wcRes.rows.length > 0;
-        const hasHighOddsWin = highOddsRes.rows.length > 0;
-
-        const toUnlock = [1]; // DEFAULT toujours débloqué
-
-        if (betCount >= 1)  toUnlock.push(2); // BETS_1
-        if (betCount >= 5)  toUnlock.push(3); // BETS_5
-        if (betCount >= 20) toUnlock.push(4); // BETS_20
-        if (hasHighOddsWin) toUnlock.push(5); // WIN_HIGH_ODDS
-        if (pct <= 0.25)    toUnlock.push(6); // TOP_25PCT
-        if (pct <= 0.10)    toUnlock.push(7); // TOP_10PCT
-        if (rank === 1)     toUnlock.push(8); // RANK_1
-        if (pct >= 0.80)    toUnlock.push(9); // BOT_20PCT
-        if (hasWcBet)       toUnlock.push(10); // WC_BET
+        const toUnlock = computeUnlocks({
+            betCount:       parseInt(betRes.rows[0].total),
+            rank:           rankRes.rows.length > 0 ? parseInt(rankRes.rows[0].rank) : 9999,
+            totalUsers:     parseInt(totalRes.rows[0].total),
+            hasWcBet:       wcRes.rows.length > 0,
+            hasHighOddsWin: highOddsRes.rows.length > 0
+        });
 
         const inserts = toUnlock.map(id =>
             pool.query(
@@ -59,4 +67,4 @@ async function checkAndUnlockAvatars(userId) {
     }
 }
 
-module.exports = { checkAndUnlockAvatars };
+module.exports = { checkAndUnlockAvatars, computeUnlocks };
