@@ -270,8 +270,58 @@
             setTimeout(() => toast.remove(), 2500);
         }
 
+        // --- Décompte avant la prochaine Coupe du Monde ---
+        const NEXT_WORLD_CUP = {
+            nom: 'Coupe du Monde 2030',
+            hotes: 'Espagne · Portugal · Maroc',
+            // Coup d'envoi estimé (calendrier officiel FIFA non encore publié)
+            kickoff: '2030-06-13T18:00:00Z'
+        };
+        let countdownTimer = null;
+
+        function stopCountdown() {
+            if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
+        }
+
+        function renderWorldCupCountdown() {
+            stopCountdown();
+            const container = document.getElementById('container-next');
+            container.innerHTML = `
+                <div class="bg-gradient-to-br from-indigo-600 to-violet-700 text-white rounded-2xl p-8 text-center shadow-lg">
+                    <div class="text-4xl mb-2">🏆</div>
+                    <h3 class="text-xl font-black tracking-tight">${NEXT_WORLD_CUP.nom}</h3>
+                    <p class="text-indigo-200 text-xs font-bold uppercase tracking-widest mt-1">${NEXT_WORLD_CUP.hotes}</p>
+                    <p class="text-indigo-100 text-sm mt-4 mb-5">La Coupe du Monde 2026 est terminée. Prochain coup d'envoi dans :</p>
+                    <div id="wc-countdown" class="flex flex-wrap justify-center gap-3"></div>
+                    <p class="text-indigo-300 text-[10px] italic mt-4">Date estimée — en attente du calendrier officiel FIFA</p>
+                </div>`;
+            updateCountdown();
+            countdownTimer = setInterval(updateCountdown, 1000);
+        }
+
+        function updateCountdown() {
+            const el = document.getElementById('wc-countdown');
+            if (!el) { stopCountdown(); return; }
+            const diff = new Date(NEXT_WORLD_CUP.kickoff) - new Date();
+            if (diff <= 0) {
+                el.innerHTML = '<span class="font-black text-lg">C\'est parti ! ⚽</span>';
+                stopCountdown();
+                return;
+            }
+            const j = Math.floor(diff / 86400000);
+            const h = Math.floor(diff % 86400000 / 3600000);
+            const m = Math.floor(diff % 3600000 / 60000);
+            const s = Math.floor(diff % 60000 / 1000);
+            el.innerHTML = [[j, 'jours'], [h, 'heures'], [m, 'min'], [s, 'sec']].map(([v, l]) => `
+                <div class="bg-white/15 backdrop-blur rounded-xl px-4 py-3 min-w-[70px]">
+                    <div class="text-2xl font-black tabular-nums">${v}</div>
+                    <div class="text-[9px] uppercase tracking-widest text-indigo-200 font-bold">${l}</div>
+                </div>`).join('');
+        }
+
         // --- WORLD CUP 2026 : données réelles depuis TheSportsDB ---
         async function fetchWorldCupMatches() {
+            stopCountdown();
             const token = localStorage.getItem('token');
             document.getElementById('league-subtitle').textContent = 'Misez vos points sur la Coupe du Monde FIFA 2026';
             document.getElementById('side-ranking-name').textContent = 'Coupe du Monde 2026';
@@ -324,7 +374,14 @@
                     } catch (_) {}
                 }
 
-                renderNext(events, cotesMap);
+                if (events.length === 0) {
+                    // Tournoi terminé : décompte jusqu'à la prochaine Coupe du Monde
+                    document.getElementById('league-subtitle').textContent =
+                        'Coupe du Monde 2026 terminée — rendez-vous en 2030 !';
+                    renderWorldCupCountdown();
+                } else {
+                    renderNext(events, cotesMap);
+                }
                 renderPast(pastData.events || []);
 
             } catch (err) {
@@ -350,7 +407,8 @@
             const upcoming = matches.filter(m => !m.scorefinal);
 
             if (upcoming.length === 0) {
-                container.innerHTML = '<div class="bg-gray-50 p-6 rounded-2xl text-center border border-dashed border-gray-200 text-xs text-gray-400 italic">Aucun match à venir.</div>';
+                // Fallback WC : tournoi terminé → décompte jusqu'à la prochaine édition
+                renderWorldCupCountdown();
                 return;
             }
 
@@ -399,11 +457,65 @@
             });
         }
 
+        // --- Helpers dates & saison ---
+        function eventDate(event) {
+            // strTimestamp TheSportsDB = UTC sans indicateur de fuseau → on force le Z
+            const ts = event.strTimestamp
+                ? event.strTimestamp.replace(' ', 'T') + (/[Z+]/.test(event.strTimestamp) ? '' : 'Z')
+                : (event.dateEvent ? `${event.dateEvent}T${event.strTime || '20:00:00'}Z` : null);
+            const d = ts ? new Date(ts) : null;
+            return d && !isNaN(d) ? d : null;
+        }
+
+        function formatEventDate(event) {
+            const d = eventDate(event);
+            if (!d) return event.dateEvent || '';
+            const dateStr = d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
+            const timeStr = d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+            return `${dateStr} · ${timeStr}`;
+        }
+
+        function currentSeason() {
+            const now = new Date();
+            const y = now.getFullYear();
+            return now.getMonth() >= 6 ? `${y}-${y + 1}` : `${y - 1}-${y}`;
+        }
+
+        // Les 10 prochains matchs d'un championnat.
+        // Clé gratuite TheSportsDB : eventsnextleague ne renvoie qu'UN match →
+        // on complète avec la journée en cours + la suivante via eventsround.
+        async function fetchUpcomingEvents(leagueId) {
+            const nextResp = await fetch(`${API_BASE}/eventsnextleague.php?id=${leagueId}`);
+            const nextData = await nextResp.json().catch(() => ({}));
+            let events = nextData.events || [];
+
+            const ref = events[0];
+            if (ref && ref.intRound && ref.strSeason) {
+                const r = parseInt(ref.intRound);
+                const rounds = await Promise.all([r, r + 1].map(rd =>
+                    fetch(`${API_BASE}/eventsround.php?id=${leagueId}&r=${rd}&s=${ref.strSeason}`)
+                        .then(res => res.json())
+                        .catch(() => ({}))
+                ));
+                const seen = new Set(events.map(e => e.idEvent));
+                rounds.forEach(d => (d.events || []).forEach(e => {
+                    if (!seen.has(e.idEvent)) { seen.add(e.idEvent); events.push(e); }
+                }));
+            }
+
+            const now = new Date();
+            return events
+                .filter(e => e.intHomeScore == null && eventDate(e) && eventDate(e) >= now)
+                .sort((a, b) => eventDate(a) - eventDate(b))
+                .slice(0, 10);
+        }
+
         // --- LEAGUE DATA (TheSportsDB pour les championnats) ---
         async function fetchLeagueData(leagueId) {
             if (leagueId === 'wc2026') {
                 return fetchWorldCupMatches();
             }
+            stopCountdown();
 
             const select = document.getElementById('league-select');
             const leagueName = select.options[select.selectedIndex].text;
@@ -412,33 +524,35 @@
 
             try {
                 const token = localStorage.getItem('token');
-                const [nextResp, pastResp, rankResp] = await Promise.all([
-                    fetch(`${API_BASE}/eventsnextleague.php?id=${leagueId}`),
+                const [upcoming, pastResp, rankResp] = await Promise.all([
+                    fetchUpcomingEvents(leagueId),
                     fetch(`${API_BASE}/eventspastleague.php?id=${leagueId}`),
-                    fetch(`${API_BASE}/lookuptable.php?l=${leagueId}&s=2025-2026`)
+                    fetch(`${API_BASE}/lookuptable.php?l=${leagueId}&s=${currentSeason()}`)
                 ]);
 
-                const nextData = await nextResp.json();
-                const pastData = await pastResp.json();
-                const rankData = await rankResp.json();
+                // Certaines réponses TheSportsDB sont vides (ex : pas de classement en LdC)
+                const pastData = await pastResp.json().catch(() => ({}));
+                const rankData = await rankResp.json().catch(() => ({}));
 
-                let events = nextData.events || [];
+                let events = upcoming;
 
-                // Fallback : si moins de 5 matchs à venir, essayer les saisons suivantes
+                // Fallback : si moins de 5 matchs à venir, compléter via la saison complète
                 if (events.length < 5) {
                     const today = new Date();
-                    for (const season of ['2026-2027', '2025-2026']) {
+                    const cs = currentSeason();
+                    const next = `${parseInt(cs) + 1}-${parseInt(cs) + 2}`;
+                    for (const season of [cs, next]) {
                         if (events.length >= 5) break;
                         try {
                             const sRes  = await fetch(`${API_BASE}/eventsseason.php?id=${leagueId}&s=${season}`);
                             const sData = await sRes.json();
                             if (sData.events) {
-                                const upcoming = sData.events
-                                    .filter(e => e.dateEvent && new Date(e.dateEvent) > today && !e.intHomeScore)
-                                    .sort((a, b) => new Date(a.dateEvent) - new Date(b.dateEvent))
+                                const upcomingSeason = sData.events
+                                    .filter(e => e.intHomeScore == null && eventDate(e) && eventDate(e) > today)
+                                    .sort((a, b) => eventDate(a) - eventDate(b))
                                     .slice(0, 10);
                                 const seen = new Set(events.map(e => e.idEvent));
-                                events = [...events, ...upcoming.filter(e => !seen.has(e.idEvent))].slice(0, 10);
+                                events = [...events, ...upcomingSeason.filter(e => !seen.has(e.idEvent))].slice(0, 10);
                             }
                         } catch (_) {}
                     }
@@ -506,7 +620,7 @@
                 card.className = 'bg-white border border-gray-200 p-4 rounded-xl flex flex-col md:flex-row items-center justify-between shadow-sm hover:border-indigo-200 transition-all';
                 card.innerHTML = `
                     <div class="flex flex-col gap-1 flex-1">
-                        <span class="text-[9px] font-bold text-indigo-500 uppercase tracking-widest">${event.dateEvent}</span>
+                        <span class="text-[9px] font-bold text-indigo-500 uppercase tracking-widest">${formatEventDate(event)}</span>
                         <div class="flex items-center gap-2 mt-1">
                             <span class="font-bold text-gray-800 text-sm truncate">${escapeHtml(event.strHomeTeam)}</span>
                             <span class="text-gray-300 font-black text-[10px]">VS</span>

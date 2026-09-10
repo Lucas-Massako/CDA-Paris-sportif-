@@ -27,6 +27,7 @@
             <div class="flex items-center gap-3">
                 <label for="league-select" class="text-xs font-bold text-gray-400 uppercase">Championnat :</label>
                 <select id="league-select" onchange="changeLeague()" class="bg-gray-50 border border-gray-200 text-gray-700 text-sm font-semibold rounded-xl px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer transition-all">
+                    <option value="soccer_uefa_champs_league">🏆 Ligue des Champions</option>
                     <option value="soccer_france_ligue_one">Ligue 1 (France)</option>
                     <option value="soccer_epl">Premier League (UK)</option>
                     <option value="soccer_spain_la_liga">La Liga (Espagne)</option>
@@ -120,6 +121,7 @@
 
         // Dictionnaire pour lier la nouvelle API à l'ancienne (pour le classement)
         const leagueMapping = {
+            "soccer_uefa_champs_league": "4480",
             "soccer_france_ligue_one": "4334",
             "soccer_epl": "4328",
             "soccer_spain_la_liga": "4335",
@@ -149,12 +151,13 @@
                     // 2. Appel aux anciens scores (TheSportsDB)
                     fetch(`${SPORTSDB_API_BASE}/eventspastleague.php?id=${sportsDbId}`),
                     // 3. Appel au classement (TheSportsDB)
-                    fetch(`${SPORTSDB_API_BASE}/lookuptable.php?l=${sportsDbId}&s=2023-2024`) 
+                    fetch(`${SPORTSDB_API_BASE}/lookuptable.php?l=${sportsDbId}&s=2026-2027`)
                 ]);
 
-                const nextData = await oddsResp.json();
-                const pastData = await pastResp.json();
-                const rankData = await rankResp.json();
+                // Certaines réponses TheSportsDB sont vides (ex : pas de classement en LdC)
+                const nextData = await oddsResp.json().catch(() => []);
+                const pastData = await pastResp.json().catch(() => ({}));
+                const rankData = await rankResp.json().catch(() => ({}));
 
                 renderNextOdds(nextData);
                 renderPast(pastData.events || []);
