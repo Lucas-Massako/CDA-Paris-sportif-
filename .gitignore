@@ -18,3 +18,11 @@ build/
 npm-debug.log*
 # Fichiers système macOS (tous niveaux)
 **/.DS_Store
+
+# Configuration locale de l'agent (non pertinente pour le jury)
+.claude/
+
+# Notes de travail et documents de soutenance (hors code source)
+SUIVI-PROJET.md
+*.docx
+~$*
